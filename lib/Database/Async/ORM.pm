@@ -3,6 +3,8 @@ package Database::Async::ORM;
 use strict;
 use warnings;
 
+# VERSION
+
 1;
 
 __END__

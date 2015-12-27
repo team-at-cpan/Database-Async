@@ -14,6 +14,13 @@ Results as:
 # Master/slave
 # Read-only, r/w
 
+# Table
+# View
+# Database
+# Schema
+# User
+# Index
+
 ## Database::Async
 
 * pools
