@@ -50,7 +50,10 @@ Database::Async - provides a database abstraction layer for L<IO::Async>
 
 =head1 DESCRIPTION
 
-Database support for L<IO::Async>.
+Database support for L<IO::Async>. This is the base API, see L<Database::Async::Engine>
+and subclasses for specific database functionality.
+
+B<This is an early preview release>.
 
 L<DBI> provides a basic API for interacting with a database, but this is
 very low level and uses a synchronous design. See L<DBIx::Async> if you're
