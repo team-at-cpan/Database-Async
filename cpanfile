@@ -1,3 +1,4 @@
+requires 'perl', '5.014';
 requires 'parent', 0;
 requires 'curry', 0;
 requires 'Future', '>= 0.38';
