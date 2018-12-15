@@ -7,7 +7,7 @@ requires 'IO::Async', '>= 0.68';
 requires 'IO::Async::Notifier', '>= 0.68';
 requires 'Class::Method::Modifiers', 0;
 requires 'Log::Any', '>= 1.050';
-requires 'Ryu', '>= 0.027';
+requires 'Ryu', '>= 0.032';
 requires 'Ryu::Async', '>= 0.011';
 requires 'Module::Load', 0;
 requires 'URI', 0;
