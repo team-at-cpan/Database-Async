@@ -289,6 +289,12 @@ sub pool {
     )
 }
 
+=head2 pool_args
+
+Returns a list of standard pool constructor arguments.
+
+=cut
+
 sub pool_args {
     my ($self) = @_;
     return (
@@ -326,6 +332,12 @@ sub configure {
     $self->next::method(%args);
 }
 
+=head2 ryu
+
+A L<Ryu::Async> instance, used for requesting sources, sinks and timers.
+
+=cut
+
 sub ryu {
     my ($self) = @_;
     $self->{ryu} //= do {
@@ -335,6 +347,12 @@ sub ryu {
         $ryu
     }
 }
+
+=head2 new_source
+
+Instantiates a new L<Ryu::Source>.
+
+=cut
 
 sub new_source { shift->ryu->source }
 
@@ -392,6 +410,12 @@ sub engine_ready {
 }
 
 sub db { shift }
+
+=head2 queue_query
+
+Assign the given query to the next available engine instance.
+
+=cut
 
 sub queue_query {
     my ($self, $query) = @_;
