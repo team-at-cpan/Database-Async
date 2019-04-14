@@ -1,6 +1,12 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    New features:
+
+    - better definition for the Database::Async::Query interface
+    - some fixes required for proper PostgreSQL support
+    - additional classes for ORM support (undocumented for now since
+    the API is likely to change)
 
 0.001     2018-12-09 17:47:08+08:00 Asia/Kuala_Lumpur
     Initial CPAN release
