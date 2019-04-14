@@ -15,6 +15,7 @@ Database::Async::Engine - base class for database implementation support in L<Da
 
 =cut
 
+use URI;
 use Scalar::Util;
 
 our %ENGINE_MAP;
@@ -40,7 +41,7 @@ sub db { shift->{db} }
 sub configure {
     my ($self, %args) = @_;
     for (qw(uri)) {
-        $self->{$_} = delete $args{$_} if exists $args{$_};
+        $self->{$_} = URI->new('' . delete($args{$_})) if exists $args{$_};
     }
     for (qw(db)) {
         Scalar::Util::weaken($self->{$_} = delete $args{$_}) if exists $args{$_};
