@@ -265,7 +265,7 @@ sub sql { shift->{sql} }
 
 =head2 bind
 
-A list of bind paramters for this query, can be empty.
+A list of bind parameters for this query, can be empty.
 
 =cut
 
