@@ -3,6 +3,8 @@ package Database::Async::ORM::Schema;
 use strict;
 use warnings;
 
+# VERSION
+
 use Database::Async::ORM::Type;
 
 sub new {

@@ -3,6 +3,8 @@ package Database::Async::ORM::Table;
 use strict;
 use warnings;
 
+# VERSION
+
 sub new {
     my ($class, %args) = @_;
     bless \%args, $class
