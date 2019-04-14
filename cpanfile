@@ -1,4 +1,4 @@
-requires 'perl', '5.020';
+requires 'perl', '5.024';
 requires 'parent', 0;
 requires 'mro', 0;
 requires 'curry', 0;
