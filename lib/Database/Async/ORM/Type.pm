@@ -14,8 +14,9 @@ sub defined_in { shift->{defined_in} }
 sub type { shift->{type} }
 sub name { shift->{name} }
 sub basis { shift->{basis} }
-sub is_builtin { 0 }
+sub is_builtin { shift->{is_builtin} }
 sub values : method { (shift->{values} // [])->@* }
+sub fields { (shift->{fields} // [])->@* }
 
 1;
 
