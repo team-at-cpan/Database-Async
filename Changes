@@ -1,6 +1,9 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    Bugs fixed:
+
+    - downgraded unnecessarily verbose messages when copying data
 
 0.002     2019-04-15 06:15:40+08:00 Asia/Kuala_Lumpur
     New features:
