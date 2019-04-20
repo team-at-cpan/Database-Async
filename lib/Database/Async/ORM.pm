@@ -21,7 +21,7 @@ Database::Async::ORM - provides object-relational features for L<Database::Async
 
  # Load schemata directly from the database
  $orm->load_from($db)
-  ->then(sub ($orm) {
+  ->then(sub {
    say 'We have the following tables:';
    $orm->tables
        ->map('name')
@@ -32,9 +32,9 @@ Database::Async::ORM - provides object-relational features for L<Database::Async
  # Load schemata from a hashref (e.g. pulled
  # from a YAML/JSON/XML file or API)
  $orm->load_from({ ... })
-  ->then(sub ($orm) {
+  ->then(sub {
    $orm->apply_to($db)
-  })->then(sub ($orm) {
+  })->then(sub {
    say 'We have the following tables:';
    $orm->tables
        ->map('name')
