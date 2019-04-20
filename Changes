@@ -5,6 +5,10 @@ Revision history for {{$dist->name}}
 
     - downgraded unnecessarily verbose messages when copying data
 
+    Dependencies:
+
+    - Future::AsyncAwait updated to 0.24 to pull in some bug fixes
+
 0.002     2019-04-15 06:15:40+08:00 Asia/Kuala_Lumpur
     New features:
 

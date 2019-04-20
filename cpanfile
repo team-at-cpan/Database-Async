@@ -3,7 +3,7 @@ requires 'parent', 0;
 requires 'mro', 0;
 requires 'curry', 0;
 requires 'Future', '>= 0.38';
-requires 'Future::AsyncAwait', '>= 0.22';
+requires 'Future::AsyncAwait', '>= 0.24';
 requires 'IO::Async', '>= 0.68';
 requires 'IO::Async::Notifier', '>= 0.68';
 requires 'Class::Method::Modifiers', 0;
