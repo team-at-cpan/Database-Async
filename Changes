@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.004     2019-04-21 14:14:22+08:00 Asia/Kuala_Lumpur
     New features:
 
     - imported more schema loading features from EntityModel
