@@ -44,6 +44,9 @@ Database::Async::ORM - provides object-relational features for L<Database::Async
 
 =cut
 
+use Future;
+use Syntax::Keyword::Try;
+use Path::Tiny;
 use List::Util qw(sum0);
 
 use Database::Async::ORM::Table;
@@ -51,14 +54,16 @@ use Database::Async::ORM::Type;
 use Database::Async::ORM::Field;
 use Database::Async::ORM::Schema;
 
+use Log::Any qw($log);
+
 sub new {
     my $class = shift;
-    bless { @_ }, $class
+    bless { schema => [], @_ }, $class
 }
 
 sub add_schema {
     my ($self, $schema) = @_;
-    push @{$self->{schema}}, $schema;
+    push $self->{schema}->@*, $schema;
 }
 
 sub schemata {
@@ -71,7 +76,7 @@ sub schema_by_name {
     return $schema;
 }
 
-sub schema_definitions { shift->{schema_definitions} }
+sub schema_definitions { shift->{schema_definitions} //= {} }
 
 =head2 load_from
 
@@ -96,11 +101,14 @@ Returns the current L<Database::Async::ORM> instance.
 =cut
 
 sub load_from {
-    my ($class, $source, $loader) = @_;
+    my ($self, $source, $loader) = @_;
     die 'needs a source to load from' unless defined $source;
 
-    $source = $self->read_from($source, $loader) unless ref $source;
-    $self->{schema_definitions} = $source;
+    my $cfg = ref($source) ? $source : $self->read_from($source, $loader);
+    $self->{schema_definitions} = $cfg;
+    $log->tracef('Loaded config %s', $cfg);
+
+    my @pending;
 
     my %pending = (type => []);
     for my $schema_name (sort keys $cfg->{schema}->%*) {
@@ -111,7 +119,7 @@ sub load_from {
             defined_in => $schema_details->{defined_in},
             name       => $schema_name
         );
-        $orm->add_schema($schema);
+        $self->add_schema($schema);
         push @pending, $schema;
 
         for my $type_name (sort keys $schema_details->{types}->%*) {
@@ -151,7 +159,7 @@ sub load_from {
                 for my $field_details ($type_details->{fields}->@*) {
                     my $type = $field_details->{type};
                     if(ref $type) {
-                        $type = $orm->schema_by_name(
+                        $type = $self->schema_by_name(
                             $type->{schema}
                         )->type_by_name(
                             $type->{name}
@@ -232,7 +240,7 @@ sub load_from {
         }
         $found = 0;
     }
-    return Future->done;
+    return Future->done(@pending);
 }
 
 =head2 METHODS - Internal
@@ -265,7 +273,7 @@ sub populate_table {
     for my $field_details ($table_details->{fields}->@*) {
         my $type = $field_details->{type};
         if(ref $type) {
-            $type = $orm->schema_by_name(
+            $type = $self->schema_by_name(
                 $type->{schema}
             )->type_by_name(
                 $type->{name}
@@ -293,7 +301,7 @@ Reads data from a file or recursively from a base path.
 =cut
 
 sub read_from {
-    my ($class, $source, $loader) = @_;
+    my ($self, $source, $loader) = @_;
     die 'needs a source to load from' unless defined $source;
 
     my $base = path($source);
@@ -301,10 +309,10 @@ sub read_from {
 
     $loader //= sub {
         my ($path) = @_;
-        if($path->basename eq $path->basename(qw(.yaml .yml))) {
+        if($path->basename ne $path->basename(qw(.yaml .yml))) {
             require YAML::XS;
             return YAML::XS::LoadFile("$path")
-        } elsif($path->basename eq $path->basename(qw(.yaml .yml))) {
+        } elsif($path->basename ne $path->basename(qw(.yaml .yml))) {
             require JSON::MaybeXS;
             return JSON::MaybeXS->new->decode($path->slurp_utf8);
         } else {
@@ -312,9 +320,7 @@ sub read_from {
         }
     };
 
-    # return $loader->($base) unless $base->is_dir;
-
-    my $cfg = $self->schema_definitions // {};
+    return $self->load_from_file(undef, $base, $loader) unless $base->is_dir;
 
     # Merge in the data from all files recursively.
     # For example, schema/personal/tables/address.yml would populate
@@ -326,38 +332,47 @@ sub read_from {
             return;
         }
 
-        # Strip off the base prefix so that we have something that matches our
-        # desired hash data path
-        my $relative = substr $_, 1 + length($base->stringify);
-
-        # Also drop any file extensions
-        $relative =~ s{\.[^.]+$}{};
-
-        # We now want to recurse into our configuration data stucture to the appropriate level.
-        my $target = do {
-            my $target = $cfg;
-            my (@path) = split qr{/}, $relative;
-            $target = ($target->{$_} //= {}) for @path;
-            $target
-        };
-
-        # So at this point, $target indicates where we should load data into our structure.
-        # For now, we're blindly overwriting, but ideally we should merge the data structure
-        # recursively with the elements in the file.
-        $log->debugf('Pulling in configuration from %s', join '.', split qr{/}, $relative);
-        my $file_data = $loader->($_);
-        if(ref($file_data) eq 'ARRAY') {
-            push @$target, @$file_data;
-        } elsif(ref($file_data) eq 'HASH') {
-            $target->{defined_in} = substr $file, 1 + length($base->stringify);
-            @{$target}{keys %$file_data} = values %$file_data;
-        } else {
-            die 'Unknown data type in file ' . $_ . ' - ' . ref($file_data) . " (actual value $file_data)";
-        }
+        $self->load_from_file($base, $file, $loader);
     }, {
         recurse => 1,
         follow_symlinks => 1
     });
+    return $self->schema_definitions;
+}
+
+sub load_from_file {
+    my ($self, $base, $file, $loader) = @_;
+    my $cfg = $self->schema_definitions;
+
+    # Strip off the base prefix so that we have something that matches our
+    # desired hash data path
+    my $relative = $base ? substr $file, 1 + length($base->stringify) : '';
+
+    # Also drop any file extensions
+    $relative =~ s{\.[^.]+$}{};
+
+    # We now want to recurse into our configuration data stucture to the appropriate level.
+    my $target = do {
+        my $target = $cfg;
+        my (@path) = split qr{/}, $relative;
+        $target = ($target->{$_} //= {}) for @path;
+        $target
+    };
+
+    # So at this point, $target indicates where we should load data into our structure.
+    # For now, we're blindly overwriting, but ideally we should merge the data structure
+    # recursively with the elements in the file.
+    $log->debugf('Pulling in configuration from %s', join '.', split qr{/}, $relative);
+    my $file_data = $loader->($file);
+    if(ref($file_data) eq 'ARRAY') {
+        push @$target, @$file_data;
+    } elsif(ref($file_data) eq 'HASH') {
+        $target->{defined_in} = $base ? substr $file, 1 + length($base->stringify) : $file;
+        @{$target}{keys %$file_data} = values %$file_data;
+    } else {
+        die 'Unknown data type in file ' . $file . ' - ' . ref($file_data) . " (actual value $file_data)";
+    }
+    $cfg;
 }
 
 1;

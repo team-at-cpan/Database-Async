@@ -18,6 +18,11 @@ sub description { shift->{description} }
 sub tables { (shift->{tables} // [])->@* }
 sub types { (shift->{types} // [])->@* }
 
+sub table_by_name {
+    my ($self, $name) = @_;
+    (grep { $_->name eq $name } (shift->{tables} // [])->@*)[0]
+}
+
 sub add_table {
     my ($self, $table) = @_;
     push @{$self->{tables}}, $table;
