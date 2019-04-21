@@ -13,6 +13,8 @@ requires 'Ryu::Async', '>= 0.011';
 requires 'Module::Load', 0;
 requires 'URI', 0;
 requires 'URI::db', '>= 0.19';
+requires 'Path::Tiny', 0;
+requires 'Syntax::Keyword::Try', 0;
 
 on 'test' => sub {
 	requires 'Test::More', '>= 0.98';
