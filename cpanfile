@@ -3,7 +3,7 @@ requires 'parent', 0;
 requires 'mro', 0;
 requires 'curry', 0;
 requires 'indirect', 0;
-requiers 'Class::Method::Modifiers', 0;
+requires 'Class::Method::Modifiers', 0;
 requires 'Path::Tiny', '>= 0.108';
 requires 'List::Util', '>= 1.50';
 requires 'Syntax::Keyword::Try', '>= 0.09';
