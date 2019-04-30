@@ -245,10 +245,24 @@ sub load_from {
             my $table_details = $item->{details};
             my $schema = $item->{schema};
             try {
+                my @parents;
+                if(my $parents = $item->{details}{parents}) {
+                    for my $parent (@$parents) {
+                        # For convenience, we allow strings for tables in the current schema
+                        my $details = ref $parent ? $parent : { name => $parent };
+                        $log->infof('Parent table is %s', $details);
+                        my $target_schema = $schema;
+                        push @parents, (
+                            $schema->table_by_name($details->{name})
+                                or die 'parent table ' . $details->{name} . ' not found'
+                        );
+                    }
+                }
                 my $table = $self->populate_table(
-                    schema => $schema,
+                    schema  => $schema,
                     details => $table_details,
-                    name => $table_name
+                    name    => $table_name,
+                    parents => \@parents,
                 );
                 push @pending, $table;
                 ++$found;
@@ -305,6 +319,7 @@ sub populate_table {
         table       => $table_details->{table} // 'enum',
         description => $table_details->{description},
         values      => $table_details->{data},
+        parents     => $args{parents},
     );
     for my $field_details ($table_details->{fields}->@*) {
         my $type = $field_details->{type};
