@@ -1,6 +1,9 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    New features:
+
+    - extend ORM handling for PostgreSQL extensions and table inheritance
 
 0.005     2019-04-28 00:27:13+08:00 Asia/Kuala_Lumpur
     No new features.
