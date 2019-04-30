@@ -48,17 +48,23 @@ use Future;
 use Syntax::Keyword::Try;
 use Path::Tiny;
 use List::Util qw(sum0);
+use Scalar::Util qw(blessed);
 
 use Database::Async::ORM::Table;
 use Database::Async::ORM::Type;
 use Database::Async::ORM::Field;
 use Database::Async::ORM::Schema;
+use Database::Async::ORM::Extension;
 
 use Log::Any qw($log);
 
 sub new {
     my $class = shift;
-    bless { schema => [], @_ }, $class
+    bless {
+        schema => [],
+        extension => [],
+        @_
+    }, $class
 }
 
 sub add_schema {
@@ -66,8 +72,21 @@ sub add_schema {
     push $self->{schema}->@*, $schema;
 }
 
+sub add_extension {
+    my ($self, $extension) = @_;
+    push $self->{extension}->@*, $extension;
+}
+
 sub schemata {
     shift->{schema}->@*
+}
+
+sub schema_list {
+    shift->{schema}->@*
+}
+
+sub extension_list {
+    shift->{extension}->@*
 }
 
 sub schema_by_name {
@@ -109,6 +128,23 @@ sub load_from {
     $log->tracef('Loaded config %s', $cfg);
 
     my @pending;
+
+    for my $extension_name ($cfg->{extensions}{required}->@*) {
+        my $extension = Database::Async::ORM::Extension->new(
+            defined_in => $cfg->{extensions}{defined_in},
+            name       => $extension_name,
+            optional   => 0,
+        );
+        $self->add_extension($extension);
+    }
+    for my $extension_name ($cfg->{extensions}{optional}->@*) {
+        my $extension = Database::Async::ORM::Extension->new(
+            defined_in => $cfg->{extensions}{defined_in},
+            name       => $extension_name,
+            optional   => 1,
+        );
+        $self->add_extension($extension);
+    }
 
     my %pending = (type => []);
     for my $schema_name (sort keys $cfg->{schema}->%*) {
