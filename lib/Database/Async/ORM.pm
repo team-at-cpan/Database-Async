@@ -428,7 +428,7 @@ sub populate_table {
             defined_in => $table_details->{defined_in},
             table      => $table,
             type       => $type,
-            %{$field_details}{grep { exists $field_details->{$_} } qw(name description)}
+            %{$field_details}{grep { exists $field_details->{$_} } qw(name description nullable)}
         );
         $log->tracef('Add field %s as %s with type %s', $field->name, $field_details, $field->type);
         push $table->{fields}->@*, $field;
