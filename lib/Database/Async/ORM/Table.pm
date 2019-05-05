@@ -18,5 +18,11 @@ sub tablespace { shift->{tablespace} }
 sub parents { (shift->{parents} //= [])->@* }
 sub fields { (shift->{fields} //= [])->@* }
 
+sub field_by_name {
+    my ($self, $name) = @_;
+    my ($field) = grep { $_->name eq $name } $self->fields;
+    return $field;
+}
+
 1;
 
