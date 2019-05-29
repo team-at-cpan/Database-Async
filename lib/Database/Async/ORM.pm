@@ -399,6 +399,12 @@ sub load_from {
                         );
                     }
                 }
+                if(my $constraints = $item->{details}{constraints}) {
+                    for my $fk (@$constraints) {
+                        next unless $fk->{type} eq 'foreign_key';
+                        die 'FK table ' . $fk->{references}{table} . ' not found' unless $schema->table_by_name($fk->{references}{table});
+                    }
+                }
                 my $table = $self->populate_table(
                     schema  => $schema,
                     details => $table_details,
