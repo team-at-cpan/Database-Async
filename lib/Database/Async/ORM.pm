@@ -483,6 +483,15 @@ sub populate_table {
         $log->tracef('Add field %s as %s with type %s', $field->name, $field_details, $field->type);
         push $table->{fields}->@*, $field;
     }
+    for my $constraint_details ($table_details->{constraints}->@*) {
+        my $constraint = Database::Async::ORM::Constraint->new(
+            defined_in => $table_details->{defined_in},
+            table      => $table,
+            %{$constraint_details}{grep { exists $constraint_details->{$_} } qw(name type deferrable initially_deferred fields references)}
+        );
+        $log->tracef('Add constraint %s as %s with type %s', $constraint->name, $constraint_details, $constraint->type);
+        push $table->{constraints}->@*, $constraint;
+    }
     $schema->add_table($table);
     return $table;
 }
