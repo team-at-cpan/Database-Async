@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.008     2019-06-10 02:50:14+08:00 Asia/Kuala_Lumpur
     New features:
 
     - constraint and foreign key methods for ::ORM
