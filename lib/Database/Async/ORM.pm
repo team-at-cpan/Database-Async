@@ -392,10 +392,10 @@ sub load_from {
                         # For convenience, we allow strings for tables in the current schema
                         my $details = ref $parent ? $parent : { name => $parent };
                         $log->tracef('Parent table is %s', $details);
-                        my $target_schema = $schema;
+                        my $target_schema = $self->schema_by_name($details->{schema} // $schema->name);
                         push @parents, (
-                            $schema->table_by_name($details->{name})
-                                or die 'parent table ' . $details->{name} . ' not found'
+                            $target_schema->table_by_name($details->{name})
+                                or die 'parent table ' . $details->{name} . ' not found in schema ' . $target_schema->name
                         );
                     }
                 }
