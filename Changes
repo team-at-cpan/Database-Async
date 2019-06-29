@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.009     2019-06-30 01:48:28+08:00 Asia/Kuala_Lumpur
     New features:
 
     - allow parent tables from other schema in ::ORM
