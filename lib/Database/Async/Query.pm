@@ -385,6 +385,11 @@ sub input_stream {
 
 sub done {
     my ($self) = @_;
+    my $f = $self->completed;
+    if($f->is_ready) {
+        $log->warnf('Calling ->done but we think our status is already %s', $f->state);
+        return $f;
+    }
     # $self->in->completed->done unless $self->in->completed->is_ready;
     $self->completed->done;
 }
