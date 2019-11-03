@@ -174,9 +174,12 @@ Cursors are handled as normal SQL queries.
 
 =cut
 
+no indirect;
+
 use Database::Async::Row;
 
 use Future;
+use Syntax::Keyword::Try;
 use Ryu::Async;
 use Scalar::Util qw(blessed);
 
