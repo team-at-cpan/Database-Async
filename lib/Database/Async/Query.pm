@@ -428,8 +428,8 @@ sub single {
     my ($self, @id) = @_;
     $self->{single} //= $self->row_data
         ->first
-        ->map(sub {
-            @id ? @{$_}{@id} : @$_
+        ->flat_map(sub {
+            [ @id ? @{$_}{@id} : @$_ ]
         })->as_list;
 }
 
