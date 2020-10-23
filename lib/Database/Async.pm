@@ -201,7 +201,7 @@ instance once ready.
 async sub transaction {
     my ($self, @args) = @_;
     Scalar::Util::weaken(
-        $self->{transactions}[@{$self->{transactions}}] =  
+        $self->{transactions}[@{$self->{transactions}}] =
             my $txn = Database::Async::Transaction->new(
                 database => $self,
                 @args
