@@ -420,7 +420,17 @@ sub rows {
 
 =head2 single
 
-Defaults to all columns, provide a list of indices to select a subset.
+Used to retrieve data for a query that's always going to return a single row.
+
+Defaults to all columns, provide a list of indices to select a subset:
+
+ # should yield "a", "b" and "c" as the three results
+ print for await $db->query(q{select 'a', 'b', 'c'})->single->as_list;
+
+ # should yield just the ID column from the first row
+ print for await $db->query(q{select id, * from some_table})->single('id')->as_list;
+
+Returns a L<Future> which will resolve to the list of items.
 
 =cut
 
