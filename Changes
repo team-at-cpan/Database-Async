@@ -1,6 +1,11 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    No new features.
+
+    Bugs fixed:
+
+    - $query->single now documented, and properly returns all requested values
 
 0.010     2019-11-06 00:14:42+08:00 Asia/Kuala_Lumpur
     No new features.
