@@ -45,20 +45,28 @@ Database::Async::ORM - provides object-relational features for L<Database::Async
 =cut
 
 use Future;
+use Future::AsyncAwait;
 use Syntax::Keyword::Try;
 use Path::Tiny;
 use List::Util qw(sum0);
+use Scalar::Util qw(blessed);
 
-use Database::Async::ORM::Table;
-use Database::Async::ORM::Type;
-use Database::Async::ORM::Field;
 use Database::Async::ORM::Schema;
+use Database::Async::ORM::Type;
+use Database::Async::ORM::Table;
+use Database::Async::ORM::Field;
+use Database::Async::ORM::Constraint;
+use Database::Async::ORM::Extension;
 
 use Log::Any qw($log);
 
 sub new {
     my $class = shift;
-    bless { schema => [], @_ }, $class
+    bless {
+        schema => [],
+        extension => [],
+        @_
+    }, $class
 }
 
 sub add_schema {
@@ -66,8 +74,21 @@ sub add_schema {
     push $self->{schema}->@*, $schema;
 }
 
+sub add_extension {
+    my ($self, $extension) = @_;
+    push $self->{extension}->@*, $extension;
+}
+
 sub schemata {
     shift->{schema}->@*
+}
+
+sub schema_list {
+    shift->{schema}->@*
+}
+
+sub extension_list {
+    shift->{extension}->@*
 }
 
 sub schema_by_name {
@@ -77,6 +98,145 @@ sub schema_by_name {
 }
 
 sub schema_definitions { shift->{schema_definitions} //= {} }
+
+# Currently hardcoded to PostgreSQL, eventually we should be able to query
+# the engine for this information.
+sub ddl_for {
+    require Database::Async::Engine::PostgreSQL::DDL;
+    return Database::Async::Engine::PostgreSQL::DDL->new;
+}
+
+async sub apply_database_changes {
+    my ($self, $db, @actions) = @_;
+
+    my $ddl = $self->ddl_for($db);
+
+    # Optional extensions first, and we don't care if any fail
+    for my $ext ($self->extension_list) {
+        my ($name) = $ext->name;
+        try {
+            die 'invalid name for extension: ' . $name unless $name =~ /^[a-zA-Z0-9_-]+$/;
+            await $db->query(qq{create extension if not exists "$name" cascade})->void if $ext->is_optional;
+        } catch {
+            $log->warnf('Failed to install optional extension %s, ignoring: %s', $name, $@);
+        }
+    }
+
+    # All remaining steps are in a single transaction
+    await $db->query(q{begin})->void;
+
+    for my $ext (grep { not $_->is_optional } $self->extension_list) {
+        my ($name) = $ext->name;
+        await $db->query(qq{create extension if not exists "$name" cascade})->void;
+    }
+
+    my @out;
+    for my $action (@actions) {
+        if($action->isa('Database::Async::ORM::Table')) {
+            $log->tracef('Create table %s', $action->name);
+            my ($sql, @bind) = $ddl->table_info($action);
+            my %map = (
+                schema => $action->schema->name,
+                table  => $action->name
+            );
+            my @data = map { $map{$_} } @bind;
+            my (@fields) = await $db->query(
+                $sql => @data
+            )->row_hashrefs
+             ->as_list;
+            push @out, $ddl->create_table($action) unless @fields;
+        } elsif($action->isa('Database::Async::ORM::Schema')) {
+            $log->tracef('Create schema %s', $action->name);
+            my ($sql, @bind) = $ddl->schema_info($action);
+            my %map = (
+                schema => $action->name,
+            );
+            my @data = map { $map{$_} } @bind;
+            my (@schema) = await $db->query(
+                $sql => @data
+            )->row_hashrefs
+             ->as_list;
+            push @out, $ddl->create_schema($action) unless @schema;
+        } elsif($action->isa('Database::Async::ORM::Type')) {
+            $log->tracef('Create type %s', $action->name);
+            my ($sql, @bind) = $ddl->type_info($action);
+            my %map = (
+                schema => $action->schema->name,
+                type   => $action->name
+            );
+            my @data = map { $map{$_} } @bind;
+            my ($existing_type) = await $db->query(
+                $sql => @data
+            )->row_hashrefs
+             ->as_list;
+            push @out, $ddl->create_type($action) unless $existing_type;
+        } else {
+            die 'unknown thing ' . $action;
+        }
+    }
+
+    # Make sure that we have no empty queries in the list... should not be necessary,
+    # perhaps this should just bail out instead.
+    @out = grep { length } @out;
+
+    $log->debugf('Applying %d pending database migrations', 0 + @out);
+    for my $query (@out) {
+        $log->tracef('Apply SQL: %s', $query);
+        await $db->query($query)->void;
+    }
+
+    await $db->query(q{commit})->void;
+    $log->debugf('Applied %d database migrations', 0 + @out);
+    return;
+}
+
+sub database_changes_as_sql {
+    my ($self, $db, @actions) = @_;
+
+    my $ddl = $self->ddl_for($db);
+
+    my @out;
+    # Optional extensions first, and we don't care if any fail
+    for my $ext ($self->extension_list) {
+        my ($name) = $ext->name;
+        try {
+            die 'invalid name for extension: ' . $name unless $name =~ /^[a-zA-Z0-9_-]+$/;
+            push @out, qq{create extension if not exists "$name" cascade} if $ext->is_optional;
+        } catch {
+            $log->warnf('Failed to install optional extension %s, ignoring: %s', $name, $@);
+        }
+    }
+
+    # All remaining steps are in a single transaction
+    push @out, q{begin};
+
+    for my $ext (grep { not $_->is_optional } $self->extension_list) {
+        my ($name) = $ext->name;
+        die 'invalid name for extension: ' . $name unless $name =~ /^[a-zA-Z0-9_-]+$/;
+        push @out, qq{create extension if not exists "$name" cascade};
+    }
+
+    for my $action (@actions) {
+        if($action->isa('Database::Async::ORM::Table')) {
+            $log->tracef('Create table %s', $action->name);
+            push @out, $ddl->create_table($action);
+        } elsif($action->isa('Database::Async::ORM::Schema')) {
+            $log->tracef('Create schema %s', $action->name);
+            push @out, $ddl->create_schema($action);
+        } elsif($action->isa('Database::Async::ORM::Type')) {
+            $log->tracef('Create type %s', $action->name);
+            push @out, $ddl->create_type($action);
+        } else {
+            die 'unknown thing ' . $action;
+        }
+    }
+
+    push @out, q{commit};
+
+    # Make sure that we have no empty queries in the list... should not be necessary,
+    # perhaps this should just bail out instead.
+    return grep { length } @out;
+}
 
 =head2 load_from
 
@@ -110,6 +270,23 @@ sub load_from {
 
     my @pending;
 
+    for my $extension_name ($cfg->{extensions}{required}->@*) {
+        my $extension = Database::Async::ORM::Extension->new(
+            defined_in => $cfg->{extensions}{defined_in},
+            name       => $extension_name,
+            optional   => 0,
+        );
+        $self->add_extension($extension);
+    }
+    for my $extension_name ($cfg->{extensions}{optional}->@*) {
+        my $extension = Database::Async::ORM::Extension->new(
+            defined_in => $cfg->{extensions}{defined_in},
+            name       => $extension_name,
+            optional   => 1,
+        );
+        $self->add_extension($extension);
+    }
+
     my %pending = (type => []);
     for my $schema_name (sort keys $cfg->{schema}->%*) {
         $log->debugf('%s', $schema_name);
@@ -134,7 +311,7 @@ sub load_from {
         for my $table_name (sort keys $schema_details->{tables}->%*) {
             my $table_details = $schema_details->{tables}{$table_name};
             for($table_details->{fields}->@*) {
-                $_->{nullable} = 1 unless exists $_->{nullable} 
+                $_->{nullable} = 1 unless exists $_->{nullable}
             }
             push $pending{table}->@*, {
                 schema  => $schema,
@@ -209,15 +386,35 @@ sub load_from {
             my $table_details = $item->{details};
             my $schema = $item->{schema};
             try {
+                my @parents;
+                if(my $parents = $item->{details}{parents}) {
+                    for my $parent (@$parents) {
+                        # For convenience, we allow strings for tables in the current schema
+                        my $details = ref $parent ? $parent : { name => $parent };
+                        $log->tracef('Parent table is %s', $details);
+                        my $target_schema = $self->schema_by_name($details->{schema} // $schema->name);
+                        push @parents, (
+                            $target_schema->table_by_name($details->{name})
+                                or die 'parent table ' . $details->{name} . ' not found in schema ' . $target_schema->name
+                        );
+                    }
+                }
+                if(my $constraints = $item->{details}{constraints}) {
+                    for my $fk (@$constraints) {
+                        next unless $fk->{type} eq 'foreign_key';
+                        die 'FK table ' . $fk->{references}{table} . ' not found' unless $schema->table_by_name($fk->{references}{table});
+                    }
+                }
                 my $table = $self->populate_table(
-                    schema => $schema,
+                    schema  => $schema,
                     details => $table_details,
-                    name => $table_name
+                    name    => $table_name,
+                    parents => \@parents,
                 );
                 push @pending, $table;
                 ++$found;
             } catch {
-                $log->debugf('Failed to apply %s.%s - %s, moved to pending',
+                $log->tracef('Failed to apply %s.%s - %s, moved to pending',
                     $schema->name,
                     $table_name,
                     $@
@@ -236,7 +433,7 @@ sub load_from {
             $log->error('Currently pending items:');
             s/\v+$// for map $_->{error}, @missing;
             $log->errorf('- %s.%s (%s) - %s', $_->{schema}, $_->{name}, $_->{type}, $_->{error}) for @missing;
-            die 'Unable to resolve dependencies, bailing out' 
+            die 'Unable to resolve dependencies, bailing out';
         }
         $found = 0;
     }
@@ -261,14 +458,16 @@ sub populate_table {
     my $table_name = $args{name};
     my $table_details = $args{details};
     my $schema = $args{schema};
-    $log->infof('Add table %s as %s', $table_name, $table_details);
+    $log->tracef('Add table %s as %s', $table_name, $table_details);
     my $table = Database::Async::ORM::Table->new(
-        defined_in  => $table_details->{defined_in},
-        name        => $table_name,
-        schema      => $schema,
-        table       => $table_details->{table} // 'enum',
-        description => $table_details->{description},
-        values      => $table_details->{data},
+        defined_in   => $table_details->{defined_in},
+        name         => $table_name,
+        schema       => $schema,
+        table        => $table_details->{table} // 'enum',
+        description  => $table_details->{description},
+        values       => $table_details->{data},
+        parents      => $args{parents},
+        primary_keys => $table_details->{primary_keys},
     );
     for my $field_details ($table_details->{fields}->@*) {
         my $type = $field_details->{type};
@@ -285,10 +484,19 @@ sub populate_table {
             defined_in => $table_details->{defined_in},
             table      => $table,
             type       => $type,
-            %{$field_details}{grep { exists $field_details->{$_} } qw(name description)}
+            %{$field_details}{grep { exists $field_details->{$_} } qw(name description nullable)}
         );
-        $log->infof('Add field %s as %s with type %s', $field->name, $field_details, $field->type);
+        $log->tracef('Add field %s as %s with type %s', $field->name, $field_details, $field->type);
         push $table->{fields}->@*, $field;
+    }
+    for my $constraint_details ($table_details->{constraints}->@*) {
+        my $constraint = Database::Async::ORM::Constraint->new(
+            defined_in => $table_details->{defined_in},
+            table      => $table,
+            %{$constraint_details}{grep { exists $constraint_details->{$_} } qw(name type deferrable initially_deferred fields references)}
+        );
+        $log->tracef('Add constraint %s as %s with type %s', $constraint->name, $constraint_details, $constraint->type);
+        push $table->{constraints}->@*, $constraint;
     }
     $schema->add_table($table);
     return $table;
@@ -387,5 +595,5 @@ Tom Molesworth C<< <TEAM@cpan.org> >>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2018-2019. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2011-2020. Licensed under the same terms as Perl itself.
 

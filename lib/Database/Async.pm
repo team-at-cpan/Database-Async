@@ -3,7 +3,7 @@ package Database::Async;
 use strict;
 use warnings;
 
-our $VERSION = '0.005';
+our $VERSION = '0.012';
 
 use parent qw(Database::Async::DB IO::Async::Notifier);
 
@@ -65,7 +65,7 @@ Other queries will be queued.
 Set up a pool of connections to provide better parallelism:
 
     my $dbh = Database::Async->new(
-        uri  => 'postgres://write@maindb/dbname?sslmode=require',
+        uri  => 'postgresql://write@maindb/dbname?sslmode=require',
         pool => {
             max => 4,
         },
@@ -201,7 +201,7 @@ instance once ready.
 async sub transaction {
     my ($self, @args) = @_;
     Scalar::Util::weaken(
-        $self->{transactions}[@{$self->{transactions}}] =  
+        $self->{transactions}[@{$self->{transactions}}] =
             my $txn = Database::Async::Transaction->new(
                 database => $self,
                 @args
@@ -583,5 +583,5 @@ Tom Molesworth C<< <TEAM@cpan.org> >>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011-2019. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2011-2020. Licensed under the same terms as Perl itself.
 

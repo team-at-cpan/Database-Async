@@ -174,9 +174,12 @@ Cursors are handled as normal SQL queries.
 
 =cut
 
+no indirect;
+
 use Database::Async::Row;
 
 use Future;
+use Syntax::Keyword::Try;
 use Ryu::Async;
 use Scalar::Util qw(blessed);
 
@@ -382,6 +385,11 @@ sub input_stream {
 
 sub done {
     my ($self) = @_;
+    my $f = $self->completed;
+    if($f->is_ready) {
+        $log->warnf('Calling ->done but we think our status is already %s', $f->state);
+        return $f;
+    }
     # $self->in->completed->done unless $self->in->completed->is_ready;
     $self->completed->done;
 }
@@ -412,7 +420,17 @@ sub rows {
 
 =head2 single
 
-Defaults to all columns, provide a list of indices to select a subset.
+Used to retrieve data for a query that's always going to return a single row.
+
+Defaults to all columns, provide a list of indices to select a subset:
+
+ # should yield "a", "b" and "c" as the three results
+ print for await $db->query(q{select 'a', 'b', 'c'})->single->as_list;
+
+ # should yield just the ID column from the first row
+ print for await $db->query(q{select id, * from some_table})->single('id')->as_list;
+
+Returns a L<Future> which will resolve to the list of items.
 
 =cut
 
@@ -420,8 +438,8 @@ sub single {
     my ($self, @id) = @_;
     $self->{single} //= $self->row_data
         ->first
-        ->map(sub {
-            @id ? @{$_}{@id} : @$_
+        ->flat_map(sub {
+            [ @id ? @{$_}{@id} : @$_ ]
         })->as_list;
 }
 
@@ -435,5 +453,5 @@ Tom Molesworth C<< <TEAM@cpan.org> >>
 
 =head1 LICENSE
 
-Copyright Tom Molesworth 2011-2019. Licensed under the same terms as Perl itself.
+Copyright Tom Molesworth 2011-2020. Licensed under the same terms as Perl itself.
 

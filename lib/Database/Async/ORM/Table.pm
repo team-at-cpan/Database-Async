@@ -17,6 +17,18 @@ sub description { shift->{description} }
 sub tablespace { shift->{tablespace} }
 sub parents { (shift->{parents} //= [])->@* }
 sub fields { (shift->{fields} //= [])->@* }
+sub constraints { (shift->{constraints} //= [])->@* }
+sub foreign_keys { grep { $_->type eq 'foreign_key' } shift->constraints }
+sub primary_keys {
+    my ($self) = @_;
+    map { $self->field_by_name($_) } ($self->{primary_keys} // [])->@*
+}
+
+sub field_by_name {
+    my ($self, $name) = @_;
+    my ($field) = grep { $_->name eq $name } $self->fields;
+    return $field;
+}
 
 1;
 
