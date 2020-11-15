@@ -22,6 +22,8 @@ requires 'JSON::MaybeUTF8', 0;
 requires 'Template', '>= 3.000';
 requires 'URI', 0;
 requires 'URI::db', '>= 0.19';
+requires 'Path::Tiny', 0;
+requires 'Syntax::Keyword::Try', 0;
 
 on 'test' => sub {
     requires 'Test::More', '>= 0.98';
