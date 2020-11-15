@@ -65,7 +65,7 @@ Other queries will be queued.
 Set up a pool of connections to provide better parallelism:
 
     my $dbh = Database::Async->new(
-        uri  => 'postgres://write@maindb/dbname?sslmode=require',
+        uri  => 'postgresql://write@maindb/dbname?sslmode=require',
         pool => {
             max => 4,
         },
