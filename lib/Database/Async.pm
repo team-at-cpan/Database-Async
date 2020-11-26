@@ -327,6 +327,9 @@ sub configure {
     if(exists $args{engine}) {
         $self->{engine_parameters} = delete $args{engine};
     }
+    if(exists $args{type}) {
+        $self->{type} = delete $args{type};
+    }
     if(my $pool = delete $args{pool}) {
         if(blessed $pool) {
             $self->{pool} = $pool;
