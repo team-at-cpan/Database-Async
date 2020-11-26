@@ -410,16 +410,17 @@ Loads the appropriate engine class and attaches to the loop.
 
 sub engine_instance {
     my ($self) = @_;
-    my $uri = $self->uri or die 'need a URI for database connection';
-    die 'unknown database type ' . $uri->scheme
-        unless my $engine_class = $Database::Async::Engine::ENGINE_MAP{$uri->scheme};
+    my $uri = $self->uri;
+    my $type = $self->{type} // $uri->scheme;
+    die 'unknown database type ' . $type
+        unless my $engine_class = $Database::Async::Engine::ENGINE_MAP{$type};
     Module::Load::load($engine_class) unless $engine_class->can('new');
     $log->tracef('Instantiating new %s', $engine_class);
     $self->add_child(
         my $engine = $engine_class->new(
             %{$self->{engine_parameters} || {}},
             db => $self,
-            uri => $uri
+            (defined($uri) ? (uri => $uri) : ())
         )
     );
     $engine;
