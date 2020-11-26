@@ -458,6 +458,17 @@ sub diagnostics {
     my ($self) = @_;
 }
 
+sub notification {
+    my ($self, $engine, $channel, $data) = @_;
+    $log->tracef('Database notifies us via %s of %s', $channel, $data);
+    $self->notification_source($channel)->emit($data);
+}
+
+sub notification_source {
+    my ($self, $name) = @_;
+    $self->{notification_source}{$name} //= $self->new_source;
+}
+
 1;
 
 __END__
