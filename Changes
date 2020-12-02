@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.013     2020-12-03 00:13:37+08:00 Asia/Kuala_Lumpur
     New features:
 
     - support for `type` configuration parameter, allowing connection to databases
