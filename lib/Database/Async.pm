@@ -30,7 +30,7 @@ Database::Async - provides a database abstraction layer for L<IO::Async>
 
  # Simple query
  $db->query(q{select id, some_data from some_table})
-    ->rows_hashref
+    ->row_hashrefs
     ->each(sub {
         printf "ID %d, data %s\n", $_->{id}, $_->{some_data};
     })
@@ -136,7 +136,7 @@ In L<Database::Async>:
    q{select * from something where id = ?},
    bind => [
     $id
-   ])->rows_hashref
+   ])->row_hashrefs
      ->as_arrayref
      ->@*
 
@@ -159,7 +159,7 @@ In L<Database::Async>:
   $sth->bind(0, $id, 'bigint')
    ->then(sub { $sth->execute })
    ->then(sub {
-    $sth->rows_hashref
+    $sth->row_hashrefs
      ->each(sub {
       print $_->{name} . "\n";
      })->completed
