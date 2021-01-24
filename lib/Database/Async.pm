@@ -310,12 +310,15 @@ Supports the following named parameters:
 
 =item * C<pool> - parameters for setting up the pool, or a L<Database::Async::Pool> instance
 
+=item * C<encoding> - default encoding to apply to parameters, queries and results, defaults to C<binary>
+
 =back
 
 =cut
 
 sub configure {
     my ($self, %args) = @_;
+    $self->{encoding} = delete $args{encoding} if exists $args{encoding};
     if(my $uri = delete $args{uri}) {
         # This could be any type of object. We make
         # the assumption here that it safely serialises
