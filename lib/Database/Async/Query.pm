@@ -346,8 +346,7 @@ sub row_data {
     $self->{row_data} //= do {
         my $row_data = $self->db->new_source;
         $self->completed->on_ready(sub {
-            my $f = $self->{row_data}->completed;
-            shift->on_ready($f) unless $f->is_ready;
+            $row_data->finish unless $row_data->is_ready;
         });
         $row_data->completed->on_ready(sub {
             my $f = $self->completed;
