@@ -411,11 +411,12 @@ L<Database::Async::Engine> instance when ready to use.
 
 =cut
 
-sub request_engine {
+async sub request_engine {
     my ($self) = @_;
     $log->tracef('Requesting new engine');
     my $engine = $self->engine_instance;
-    $engine->connect->retain
+    $log->tracef('Connecting');
+    return await $engine->connect->retain;
 }
 
 =head2 engine_instance

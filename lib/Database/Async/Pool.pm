@@ -16,6 +16,7 @@ Database::Async::Pool - connection manager for L<Database::Async>
 use Database::Async::Backoff;
 
 use Future;
+use Future::AsyncAwait;
 use Scalar::Util qw(blessed);
 use Log::Any qw($log);
 
@@ -99,17 +100,17 @@ Resolves to an engine. May need to wait if there are none available.
 
 =cut
 
-sub next_engine {
+async sub next_engine {
     my ($self) = @_;
     $log->tracef('Have %d ready engines to use', 0 + @{$self->{ready}});
     if(my $engine = shift @{$self->{ready}}) {
-        return Future->done($engine)
+        return $engine;
     }
     push @{$self->{waiting}}, my $f = $self->new_future;
     my $total = $self->count + $self->pending_count;
     $log->tracef('Might request, current count is %d/%d (%d pending, %d active)', $total, $self->max, $self->pending_count, $self->count);
-    $self->request_engine unless $total >= $self->max;
-    return $f;
+    await $self->request_engine unless $total >= $self->max;
+    return await $f;
 }
 
 sub new_future {

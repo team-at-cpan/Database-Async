@@ -361,7 +361,9 @@ sub completed {
     my ($self) = @_;
     $self->{completed} //= do {
         my $f = $self->db->new_future;
-        $self->start;
+        $self->start->on_fail(sub {
+            $f->fail(@_) unless $f->is_ready;
+        });
         $f
     }
 }
