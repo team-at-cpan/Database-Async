@@ -316,9 +316,20 @@ Supports the following named parameters:
 
 =cut
 
+my %encoding_map = (
+    'utf8'    => 'UTF-8',
+    'utf-8'   => 'UTF-8',
+    'UTF8'    => 'UTF-8',
+    'unicode' => 'UTF-8',
+);
+
 sub configure {
     my ($self, %args) = @_;
-    $self->{encoding} = delete $args{encoding} if exists $args{encoding};
+
+    if(my $encoding = delete $args{encoding}) {
+        $self->{encoding} = $encoding_map{$encoding} // $encoding;
+    }
+
     if(my $uri = delete $args{uri}) {
         # This could be any type of object. We make
         # the assumption here that it safely serialises
@@ -345,6 +356,8 @@ sub configure {
     }
     $self->next::method(%args);
 }
+
+sub encoding { shift->{encoding} }
 
 =head2 ryu
 
@@ -419,12 +432,17 @@ sub engine_instance {
         unless my $engine_class = $Database::Async::Engine::ENGINE_MAP{$type};
     Module::Load::load($engine_class) unless $engine_class->can('new');
     $log->tracef('Instantiating new %s', $engine_class);
+    my %param = (
+        %{$self->{engine_parameters} || {}},
+        (defined($uri) ? (uri => $uri) : ()),
+        db => $self,
+    );
+
+    # Only recent engine versions support this parameter
+    $param{encoding} = $self->encoding if $engine_class->can('encoding') and $self->encoding;
+
     $self->add_child(
-        my $engine = $engine_class->new(
-            %{$self->{engine_parameters} || {}},
-            db => $self,
-            (defined($uri) ? (uri => $uri) : ())
-        )
+        my $engine = $engine_class->new(%param)
     );
     $engine;
 }
