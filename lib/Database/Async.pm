@@ -440,7 +440,14 @@ sub engine_instance {
     );
 
     # Only recent engine versions support this parameter
-    $param{encoding} = $self->encoding if $engine_class->can('encoding') and $self->encoding;
+    if(my $encoding = $self->encoding) {
+        if($engine_class->can('encoding')) {
+            $param{encoding} = $self->encoding;
+        } else {
+            # If we're given this parameter, let's not ignore it silently
+            die 'Database engine ' . $engine_class . ' does not support encoding parameter, try upgrading that module from CPAN or remove the encoding configuration in Database::Async';
+        }
+    }
 
     $self->add_child(
         my $engine = $engine_class->new(%param)
