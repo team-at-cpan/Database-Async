@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.014     2021-06-16 00:58:19+08:00 Asia/Kuala_Lumpur
     [New features]
 
     - encoding now supported, for cases where all interaction with the database
