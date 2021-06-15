@@ -122,11 +122,11 @@ sub new_future {
     )->($label)
 }
 
-sub request_engine {
+async sub request_engine {
     my ($self) = @_;
     $log->tracef('Pool requesting new engine');
     ++$self->{pending_count};
-    $self->{request_engine}->()
+    await $self->{request_engine}->()
 }
 
 1;
