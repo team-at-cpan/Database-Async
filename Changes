@@ -1,6 +1,9 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    [New features]
+
+    - engine disconnection notification causes that engine to be removed from the pool
 
 0.015     2021-07-07 18:00:29+08:00 Asia/Kuala_Lumpur
     [Bugs fixed]
