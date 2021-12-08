@@ -1,6 +1,9 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+    [New features]
+
+    - basic exponential backoff support when reconnecting
 
 0.016     2021-09-13 00:40:59+08:00 Asia/Kuala_Lumpur
     [New features]
