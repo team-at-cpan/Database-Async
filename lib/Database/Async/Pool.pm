@@ -160,6 +160,13 @@ async sub request_engine {
     $self->backoff->reset;
 }
 
+sub _remove_from_loop {
+    my ($self, $loop) = @_;
+    $self->unregister_engine($_) for @{$self->{ready}};
+    $_->cancel for splice @{$self->{waiting}};
+    return $self->next::method($loop);
+}
+
 1;
 
 =head1 AUTHOR

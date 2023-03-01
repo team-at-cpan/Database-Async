@@ -511,6 +511,17 @@ sub _add_to_loop {
     return;
 }
 
+sub _remove_from_loop {
+    my ($self, $loop) = @_;
+    if($self->{ryu}) {
+        $self->remove_child(delete $self->{ryu});
+    }
+    if($self->{pool}) {
+        $self->remove_child(delete $self->{pool});
+    }
+    return $self->next::method($loop);
+}
+
 1;
 
 __END__
