@@ -171,7 +171,7 @@ In L<Database::Async>:
 use mro;
 no indirect;
 
-use Future::AsyncAwait;
+use Future::AsyncAwait qw(:experimental);
 use Syntax::Keyword::Try;
 
 use URI;
@@ -483,9 +483,13 @@ Assign the given query to the next available engine instance.
 async sub queue_query {
     my ($self, $query) = @_;
     $log->tracef('Queuing query %s', $query);
-    my $engine = await $self->pool->next_engine;
+    my $f = $self->pool->next_engine;
+    CANCEL { $f->cancel; return undef }
+    my $engine = await $f;
     $log->tracef('Query %s about to run on %s', $query, $engine);
-    return await $engine->handle_query($query);
+    my $q = $engine->handle_query($query);
+    CANCEL { $q->cancel; return undef }
+    return await $q;
 }
 
 sub diagnostics {

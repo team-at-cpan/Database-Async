@@ -19,7 +19,7 @@ use Database::Async::Backoff::Exponential;
 use Database::Async::Backoff::None;
 
 use Future;
-use Future::AsyncAwait;
+use Future::AsyncAwait qw(:experimental);
 use Syntax::Keyword::Try;
 use Scalar::Util qw(blessed refaddr);
 use List::UtilsBy qw(extract_by);
