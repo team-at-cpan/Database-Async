@@ -318,7 +318,7 @@ Schedules this query for execution.
 
 sub start {
     my ($self) = @_;
-    $self->{queued} //= $self->db->queue_query($self)->retain;
+    $self->{queued} //= $self->db->queue_query($self);
 }
 
 sub run_on {

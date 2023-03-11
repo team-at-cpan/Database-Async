@@ -153,17 +153,23 @@ async sub request_engine {
     $log->tracef('Pool requesting new engine');
     ++$self->{pending_count};
     my $delay = $self->backoff->next;
-    await $self->loop->delay_future(
-        after => $delay
-    ) if $delay;
-    await $self->{request_engine}->();
+    if($delay) {
+        my $f = $self->loop->delay_future(
+            after => $delay
+        );
+        CANCEL { $f->cancel }
+        await $f;
+    }
+    my $req = $self->{request_engine}->();
+    CANCEL { $req->cancel }
+    await $req;
     $self->backoff->reset;
 }
 
 sub _remove_from_loop {
     my ($self, $loop) = @_;
-    $self->unregister_engine($_) for @{$self->{ready}};
     $_->cancel for splice @{$self->{waiting}};
+    $self->unregister_engine($_) for splice @{$self->{ready}};
     return $self->next::method($loop);
 }
 
