@@ -14,6 +14,7 @@ sub table { shift->{table} }
 sub name { shift->{name} }
 sub type { shift->{type} }
 sub nullable { shift->{nullable} }
+sub default { shift->{default} }
 
 1;
 

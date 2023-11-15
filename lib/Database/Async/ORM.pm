@@ -348,6 +348,7 @@ sub load_from {
                         type => $type,
                         name => $field_details->{name},
                         nullable => 1,
+                        default => $field_details->{default},
                     )
                 }
                 my $type = Database::Async::ORM::Type->new(
@@ -484,7 +485,7 @@ sub populate_table {
             defined_in => $table_details->{defined_in},
             table      => $table,
             type       => $type,
-            %{$field_details}{grep { exists $field_details->{$_} } qw(name description nullable)}
+            %{$field_details}{grep { exists $field_details->{$_} } qw(name description nullable default)}
         );
         $log->tracef('Add field %s as %s with type %s', $field->name, $field_details, $field->type);
         push $table->{fields}->@*, $field;
