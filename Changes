@@ -1,0 +1,128 @@
+Revision history for Database-Async
+
+0.019     2023-12-04 23:19:30+08:00 Asia/Singapore
+    [New features]
+
+    - support for attributes and default values in ORM
+
+0.018     2023-03-20 09:12:55+08:00 Asia/Singapore
+    [Bugs fixed]
+
+    - Perform cleanup when cancelling queries
+
+0.017     2021-12-08 22:50:12+08:00 Asia/Kuala_Lumpur
+    [New features]
+
+    - basic exponential backoff support when reconnecting
+
+0.016     2021-09-13 00:40:59+08:00 Asia/Kuala_Lumpur
+    [New features]
+
+    - engine disconnection notification causes that engine to be removed from the pool
+
+0.015     2021-07-07 18:00:29+08:00 Asia/Kuala_Lumpur
+    [Bugs fixed]
+
+    - database error exceptions were not propagated in all cases, thanks to Kok Jun Bon
+    for reporting and providing a test case for this
+
+0.014     2021-06-16 00:58:19+08:00 Asia/Kuala_Lumpur
+    [New features]
+
+    - encoding now supported, for cases where all interaction with the database
+    is text-only
+
+    [Bugs fixed]
+
+    - query completion logic has been refactored to cover the different states better,
+    particularly regarding streaming in/out (e.g. COPY in PostgreSQL)
+
+0.013     2020-12-03 00:13:37+08:00 Asia/Kuala_Lumpur
+    New features:
+
+    - support for `type` configuration parameter, allowing connection to databases
+    without needing to pass a specific URI
+    - notification channel support (currently undocumented, since the interface
+    may change slightly to make it compatible with non-PostgreSQL databases)
+
+    Bugs fixed:
+
+    - single-row queries via `->single` generated superfluous log messages (thanks to Mehdi
+    Zarei for helping test this)
+
+0.012     2020-10-24 22:28:00+08:00 Asia/Kuala_Lumpur
+    No new features.
+
+    Bugs fixed:
+
+    - Removed AutoPrereqs dzil plugin since it was picking up downstream dependencies
+    due to `require` lines, thanks to CHORNY for reporting
+    (https://github.com/team-at-cpan/Database-Async/issues/5)
+
+0.011     2020-10-23 18:47:35+08:00 Asia/Kuala_Lumpur
+    No new features.
+
+    Bugs fixed:
+
+    - $query->single now documented, and properly returns all requested values
+
+0.010     2019-11-06 00:14:42+08:00 Asia/Kuala_Lumpur
+    No new features.
+
+    Dependencies:
+
+    - Latest version of Ryu, Future::AsyncAwait and Syntax::Keyword::Try to
+    pick up some recent bugfixes.
+
+0.009     2019-06-30 01:48:28+08:00 Asia/Kuala_Lumpur
+    New features:
+
+    - allow parent tables from other schema in ::ORM
+
+0.008     2019-06-10 02:50:14+08:00 Asia/Kuala_Lumpur
+    New features:
+
+    - constraint and foreign key methods for ::ORM
+
+0.007     2019-05-05 19:18:15+08:00 Asia/Kuala_Lumpur
+    New features:
+
+    - minor improvements to ORM handling
+
+0.006     2019-05-01 06:45:34+08:00 Asia/Kuala_Lumpur
+    New features:
+
+    - extend ORM handling for PostgreSQL extensions and table inheritance
+
+0.005     2019-04-28 00:27:13+08:00 Asia/Kuala_Lumpur
+    No new features.
+
+    Dependencies:
+
+    - Future::AsyncAwait 0.26 for more bug fixes, plus latest Ryu and Ryu::Async
+
+0.004     2019-04-21 14:14:22+08:00 Asia/Kuala_Lumpur
+    New features:
+
+    - imported more schema loading features from EntityModel
+
+0.003     2019-04-20 15:11:51+08:00 Asia/Kuala_Lumpur
+    Bugs fixed:
+
+    - downgraded unnecessarily verbose messages when copying data
+
+    Dependencies:
+
+    - Future::AsyncAwait updated to 0.24 to pull in some bug fixes
+
+0.002     2019-04-15 06:15:40+08:00 Asia/Kuala_Lumpur
+    New features:
+
+    - better definition for the Database::Async::Query interface
+    - some fixes required for proper PostgreSQL support
+    - additional classes for ORM support (undocumented for now since
+    the API is likely to change)
+
+0.001     2018-12-09 17:47:08+08:00 Asia/Kuala_Lumpur
+    Initial CPAN release
+
