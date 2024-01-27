@@ -5,7 +5,9 @@ use warnings;
 
 our $VERSION = '0.019';
 
-use parent qw(Database::Async::DB IO::Async::Notifier);
+use Object::Pad;
+class Database::Async;
+inherit Database::Async::DB;
 
 =head1 NAME
 

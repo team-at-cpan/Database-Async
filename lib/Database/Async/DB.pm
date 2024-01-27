@@ -3,6 +3,10 @@ package Database::Async::DB;
 use strict;
 use warnings;
 
+use Object::Pad;
+class Database::Async::DB;
+inherit IO::Async::Notifier;
+
 # VERSION
 
 use Future;
