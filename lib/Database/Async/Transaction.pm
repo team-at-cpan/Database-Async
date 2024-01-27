@@ -79,7 +79,7 @@ sub DESTROY {
     my ($self) = @_;
     return if ${^GLOBAL_PHASE} eq 'DESTRUCT';
     return unless $self->{open};
-    $self->rollback->retain;
+    $self->adopt_future($self->rollback);
 }
 
 before [@Database::Async::Query::METHODS] => sub {
