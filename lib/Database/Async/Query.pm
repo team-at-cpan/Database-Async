@@ -5,6 +5,9 @@ use warnings;
 
 # VERSION
 
+use Object::Pad;
+class Database::Async::Query;
+
 =head1 NAME
 
 Database::Async::Query - represents a single database query

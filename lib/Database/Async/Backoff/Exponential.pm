@@ -5,7 +5,9 @@ use warnings;
 
 # VERSION
 
-use parent qw(Database::Async::Backoff);
+use Object::Pad;
+class Database::Async::Backoff::Exponential;
+inherit Database::Async::Backoff;
 
 use mro qw(c3);
 use Future::AsyncAwait;

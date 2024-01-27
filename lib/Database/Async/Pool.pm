@@ -3,7 +3,9 @@ package Database::Async::Pool;
 use strict;
 use warnings;
 
-use parent qw(IO::Async::Notifier);
+use Object::Pad;
+class Database::Async::Pool;
+inherit IO::Async::Notifier;
 
 # VERSION
 

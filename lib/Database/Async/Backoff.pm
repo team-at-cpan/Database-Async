@@ -5,6 +5,9 @@ use warnings;
 
 # VERSION
 
+use Object::Pad;
+class Database::Async::Backoff;
+
 =head1 NAME
 
 Database::Async::Backoff - support for backoff algorithms in L<Database::Async>
@@ -14,6 +17,7 @@ Database::Async::Backoff - support for backoff algorithms in L<Database::Async>
 =cut
 
 use Future::AsyncAwait;
+
 my %class_for_type;
 
 sub new {

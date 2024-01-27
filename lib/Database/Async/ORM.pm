@@ -5,6 +5,9 @@ use warnings;
 
 # VERSION
 
+use Object::Pad;
+class Database::Async::ORM;
+
 =head1 NAME
 
 Database::Async::ORM - provides object-relational features for L<Database::Async>

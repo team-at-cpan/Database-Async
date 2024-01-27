@@ -5,6 +5,9 @@ use warnings;
 
 # VERSION
 
+use Object::Pad;
+class Database::Async::Row;
+
 =head1 NAME
 
 Database::Async::Row - represents a single row response

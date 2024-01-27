@@ -5,7 +5,9 @@ use warnings;
 
 # VERSION
 
-use parent qw(IO::Async::Notifier);
+use Object::Pad;
+class Database::Async::Engine;
+inherit IO::Async::Notifier;
 
 =head1 NAME
 

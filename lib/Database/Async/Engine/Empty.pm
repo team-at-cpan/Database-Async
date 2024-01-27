@@ -5,7 +5,9 @@ use warnings;
 
 # VERSION
 
-use parent qw(Database::Async::Engine);
+use Object::Pad;
+class Database::Async::Engine::Empty;
+inherit Database::Async::Engine;
 
 =head1 NAME
 
