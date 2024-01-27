@@ -80,7 +80,7 @@ sub unregister_engine {
         # and thus included in `pending_count`
         --$self->{$count ? 'count' : 'pending_count'};
         $log->infof('After cleanup we have %d count, %d pending, %d waiting', $self->{count}, $self->{pending_count}, 0 + @{$self->{waiting}});
-        $self->process_pending->retain if @{$self->{waiting}};
+        $self->adopt_future($self->process_pending) if @{$self->{waiting}};
     } catch ($e) {
         $log->errorf('Failed %s', $e);
     }
