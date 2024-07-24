@@ -17,20 +17,15 @@ Database::Async::Backoff->register(
     exponential => __PACKAGE__
 );
 
-sub new {
-    my ($class, %args) = @_;
-    return $class->next::method(
-        max_delay => 30,
-        initial_delay => 0.05,
-        %args
-    );
+ADJUST {
+    $self->max_delay ||= 30;
+    $self->initial_delay ||= 0.05;
 }
 
-sub next {
-    my ($self) = @_;
-    return $self->{delay} ||= min(
+async method next {
+    return $self->delay = min(
         $self->max_delay,
-        (2 * ($self->{delay} // 0))
+        (2 * ($self->delay // 0))
          || $self->initial_delay
     );
 }

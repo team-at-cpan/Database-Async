@@ -20,22 +20,16 @@ use Future::AsyncAwait;
 
 my %class_for_type;
 
-sub new {
-    my ($class, %args) = @_;
-    bless \%args, $class
+field $initial_delay : mutator : param = 0;
+field $max_delay : mutator : param = 30;
+field $delay : mutator : param = 0;
+
+async method next ($code = undef) {
+    return $self->delay ||= 1;
 }
 
-sub initial_delay { shift->{initial_delay} }
-sub max_delay { shift->{max_delay} }
-
-async sub next {
-    my ($self, $code) = @_;
-    return $self->{delay} ||= 1;
-}
-
-async sub reset {
-    my ($self) = @_;
-    $self->{delay} = 0;
+async method reset {
+    $self->delay = 0;
     $self
 }
 
