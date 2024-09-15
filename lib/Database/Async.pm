@@ -170,15 +170,20 @@ use Database::Async::Query;
 use Database::Async::StatementHandle;
 use Database::Async::Transaction;
 
+# Automatic encoding for all queries, responses and parameters
 field $encoding : reader;
-field $ryu;
-field $type:param = undef;
-field $uri:param:reader = undef;
-field $pool = undef;
-field $pool_args:param = [];
-field $transactions = [];
-field $engine_parameters = +{};
+# Database engine type, should be something registered by loading a Database::Async::Engine subclass
+field $type:param:Checked(Maybe(Str)) = undef;
+# The connection URI for the database
+field $uri:param:reader:Checked(Maybe(Isa(URI))) = undef;
+# A Database::Async::Pool instance
+field $pool:Checked(Maybe(Isa(Database::Async::Pool))) = undef;
+field $pool_args:param:Checked(ArrayRef) = [];
+field $transactions:Checked(ArrayRef) = [];
+field $engine_parameters:Checked(HashRef) = +{};
 field $notification_source = undef;
+
+field $ryu;
 
 =head1 METHODS
 
