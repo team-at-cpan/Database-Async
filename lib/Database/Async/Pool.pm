@@ -16,11 +16,8 @@ use Database::Async::Backoff::Exponential;
 use Database::Async::Backoff::None;
 
 use Future;
-use Future::AsyncAwait qw(:experimental);
 use Syntax::Keyword::Try;
-use Scalar::Util qw(blessed refaddr);
 use List::UtilsBy qw(extract_by);
-use Log::Any qw($log);
 
 field $min:param:reader = 0;
 field $max:param:reader = 1;
@@ -33,7 +30,7 @@ field $ordering      = 'serial';
 field $waiting       = [];
 field $ready         = [];
 field $new_future;
-field $request_engine;
+field $request_engine_handler:param:mutator;
 field $uri;
 
 ADJUST {
@@ -147,7 +144,7 @@ async method request_engine {
         CANCEL { $f->cancel }
         await $f;
     }
-    my $req = $request_engine->();
+    my $req = $request_engine_handler->();
     CANCEL { $req->cancel }
     await $req;
     $self->backoff->reset;

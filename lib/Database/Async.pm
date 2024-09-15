@@ -172,9 +172,13 @@ use Database::Async::Transaction;
 
 field $encoding : reader;
 field $ryu;
-field $type;
-field $uri;
-field $pool;
+field $type:param = undef;
+field $uri:param:reader = undef;
+field $pool = undef;
+field $pool_args:param = [];
+field $transactions = [];
+field $engine_parameters = +{};
+field $notification_source = undef;
 
 =head1 METHODS
 
@@ -189,7 +193,7 @@ instance once ready.
 
 async method transaction (@args) {
     Scalar::Util::weaken(
-        $self->{transactions}[@{$self->{transactions}}] =
+        $transactions->[$transactions->@*] =
             my $txn = Database::Async::Transaction->new(
                 database => $self,
                 @args
@@ -254,8 +258,6 @@ Returns the configured L<URI> for populating database instances.
 
 =cut
 
-method uri { $self->{uri} }
-
 =head2 pool
 
 Returns the L<Database::Async::Pool> instance.
@@ -263,14 +265,14 @@ Returns the L<Database::Async::Pool> instance.
 =cut
 
 method pool {
-    unless($self->{pool}) {
+    unless($pool) {
         $self->add_child(
-            $self->{pool} = Database::Async::Pool->new(
+            $pool = Database::Async::Pool->new(
                 $self->pool_args
             )
         );
     }
-    return $self->{pool};
+    return $pool;
 }
 
 =head2 pool_args
@@ -281,8 +283,9 @@ Returns a list of standard pool constructor arguments.
 
 method pool_args {
     return (
-        request_engine => $self->curry::weak::request_engine,
+        request_engine_handler => $self->curry::weak::request_engine,
         uri            => $self->uri,
+        $pool_args->@*,
     );
 }
 
@@ -335,11 +338,7 @@ method configure (
         if(blessed $pool) {
             $args{pool} = $pool;
         } else {
-            warn "Pool args = @{[ $pool->%* ]}";
-            $args{pool} = Database::Async::Pool->new(
-                $self->pool_args,
-                %$pool,
-            );
+            $args{pool_args} = [ $pool->%* ];
         }
     }
     $self->next::method(%args);
@@ -415,7 +414,7 @@ method engine_instance {
     Module::Load::load($engine_class) unless $engine_class->can('new');
     $log->tracef('Instantiating new %s', $engine_class);
     my %param = (
-        %{$self->{engine_parameters} || {}},
+        $engine_parameters->%*,
         (defined($uri) ? (uri => $uri) : ()),
         db => $self,
     );
@@ -479,7 +478,7 @@ method notification ($engine, $channel, $data) {
 }
 
 method notification_source ($name) {
-    $self->{notification_source}{$name} //= $self->new_source;
+    $notification_source->{$name} //= $self->new_source;
 }
 
 method _remove_from_loop ($loop) {
