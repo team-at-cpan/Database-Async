@@ -33,8 +33,13 @@ subtest 'pool handling' => sub {
     note 'pass instance';
     is(exception {
         my $db = new_ok('Database::Async', [
-            pool => Database::Async::Pool->new(max => 3),
         ]);
+        $db->configure(
+            pool => Database::Async::Pool->new(
+                max => 3,
+                request_engine_handler => $db->curry::weak::request_engine,
+            ),
+        );
         isa_ok($db->pool, 'Database::Async::Pool');
         is($db->pool->min, 0, 'pool min is still 0');
         is($db->pool->max, 3, 'pool now has 3 connection max');
