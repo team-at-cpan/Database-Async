@@ -55,9 +55,9 @@ use Database::Async::ORM::Field;
 use Database::Async::ORM::Constraint;
 use Database::Async::ORM::Extension;
 
-field $extension:param:reader:Checked(Isa(ArrayRef)) = [];
-field $schema:param:reader:Checked(Isa(ArrayRef)) = [];
-field $schema_definitions:param:reader:Checked(Isa(HashRef)) = +{};
+field $extension:param:reader:Checked(ArrayRef) = [];
+field $schema:param:reader:Checked(ArrayRef) = [];
+field $schema_definitions:param:reader:Checked(HashRef) = +{};
 
 method schemata { $schema->@* }
 method schema_list { $schema->@* }
