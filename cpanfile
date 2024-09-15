@@ -7,7 +7,7 @@ requires 'Future', '>= 0.40';
 requires 'Future::AsyncAwait', '>= 0.33';
 requires 'indirect', 0;
 requires 'IO::Async', '>= 0.68';
-requires 'IO::Async::Notifier', '>= 0.68';
+requires 'IO::AsyncX::Notifier', '>= 0.004';
 requires 'JSON::MaybeUTF8', 0;
 requires 'List::Util', '>= 1.50';
 requires 'List::UtilsBy', 0;
