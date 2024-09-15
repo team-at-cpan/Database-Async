@@ -19,16 +19,14 @@ use Future;
 use Syntax::Keyword::Try;
 use List::UtilsBy qw(extract_by);
 
-field $min:param:reader = 0;
-field $max:param:reader = 1;
+field $min:param:reader:Checked(Num) = 0;
+field $max:param:reader:Checked(Num) = 1;
 
-field $backoff:reader;
-field $pending_count:reader = 0;
-field $count:reader         = 0;
-field $attempts      = undef;
-field $ordering      = 'serial';
-field $waiting       = [];
-field $ready         = [];
+field $backoff:reader:Checked(Maybe(Isa(Database::Async::Backoff)));
+field $pending_count:reader:Checked(Num) = 0;
+field $count:reader:Checked(Num)         = 0;
+field $waiting:Checked(ArrayRef)         = [];
+field $ready:Checked(ArrayRef)           = [];
 field $new_future;
 field $request_engine_handler:param:mutator;
 field $uri;
