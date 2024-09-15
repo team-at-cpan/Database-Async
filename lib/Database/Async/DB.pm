@@ -1,19 +1,10 @@
 package Database::Async::DB;
-
-use strict;
-use warnings;
-
-use Object::Pad;
-class Database::Async::DB;
-inherit IO::Async::Notifier;
+use Full::Class qw(:v1), extends => 'IO::AsyncX::Notifier';
 
 # VERSION
-
-use Future;
+# AUTHORITY
 
 use Database::Async::StatementHandle;
-
-use Log::Any qw($log);
 
 our @METHODS = qw(
     do

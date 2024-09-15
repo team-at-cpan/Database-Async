@@ -1,21 +1,15 @@
 package Database::Async::ORM::Field;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
+# AUTHORITY
 
-sub new {
-    my ($class, %args) = @_;
-    bless \%args, $class
-}
-
-sub table { shift->{table} }
-sub name { shift->{name} }
-sub attributes { shift->{attributes} }
-sub type { shift->{type} }
-sub nullable { shift->{nullable} }
-sub default { shift->{default} }
+field $table:param:reader;
+field $name:param:reader;
+field $type:param:reader;
+field $attributes:param:reader;
+field $nullable:param:reader;
+field $default:param:reader;
 
 1;
 

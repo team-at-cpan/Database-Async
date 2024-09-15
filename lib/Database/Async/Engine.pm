@@ -1,13 +1,8 @@
 package Database::Async::Engine;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1), extends => 'IO::AsyncX::Notifier';
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Engine;
-inherit IO::Async::Notifier;
+# AUTHORITY
 
 =head1 NAME
 
@@ -18,7 +13,6 @@ Database::Async::Engine - base class for database implementation support in L<Da
 =cut
 
 use URI;
-use Scalar::Util;
 
 our %ENGINE_MAP;
 

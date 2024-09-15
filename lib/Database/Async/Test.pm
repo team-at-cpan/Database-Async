@@ -1,7 +1,5 @@
 package Database::Async::Test;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
 

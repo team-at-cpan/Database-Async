@@ -1,17 +1,8 @@
 package Database::Async::Backoff::Exponential;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1), extends => 'Database::Async::Backoff';
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Backoff::Exponential;
-inherit Database::Async::Backoff;
-
-use mro qw(c3);
-use Future::AsyncAwait;
-use List::Util qw(min);
+# AUTHORITY
 
 Database::Async::Backoff->register(
     exponential => __PACKAGE__

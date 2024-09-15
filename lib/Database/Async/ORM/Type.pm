@@ -1,26 +1,30 @@
 package Database::Async::ORM::Type;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
+# AUTHORITY
 
-sub new {
-    my ($class, %args) = @_;
-    bless \%args, $class
+use List::Keywords qw(first);
+
+field $schema:param:reader;
+field $name:param:reader;
+field $defined_in:param:reader;
+field $description:param:reader;
+
+field $type:param:reader;
+field $basis:param:reader = undef;
+field $is_builtin:param:reader;
+field $values:param = [];
+field $fields:param = [];
+
+method values { $values->@* }
+method fields { $fields->@* }
+
+method qualified_name {
+    $self->is_builtin
+    ? $self->name
+    : $self->schema->name . '.' . $self->name
 }
-
-sub schema { shift->{schema} }
-sub description { shift->{description} }
-sub defined_in { shift->{defined_in} }
-sub type { shift->{type} }
-sub name { shift->{name} }
-sub basis { shift->{basis} }
-sub is_builtin { shift->{is_builtin} }
-sub values : method { (shift->{values} // [])->@* }
-sub fields { (shift->{fields} // [])->@* }
-
-sub qualified_name { ($_[0]->is_builtin ? $_[0]->name : $_[0]->schema->name . '.' . $_[0]->name) }
 
 1;
 

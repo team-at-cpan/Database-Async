@@ -1,12 +1,8 @@
 package Database::Async::Query;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Query;
+# AUTHORITY
 
 =head1 NAME
 
@@ -192,12 +188,6 @@ use overload
     '""' => sub { my ($self) = @_; sprintf '%s[%s]', ref($self), $self->sql },
     bool => sub { 1 },
     fallback => 1;
-
-sub new {
-    my ($class, %args) = @_;
-    Scalar::Util::weaken($args{db});
-    bless \%args, $class;
-}
 
 =head2 in
 

@@ -1,13 +1,8 @@
 package Database::Async::Engine::Empty;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1), extends => 'Database::Async::Engine';
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Engine::Empty;
-inherit Database::Async::Engine;
+# AUTHORITY
 
 =head1 NAME
 
@@ -29,11 +24,6 @@ my %queries = (
         ],
     },
 );
-
-sub new {
-    my ($class, %args) = @_;
-    bless \%args, $class
-}
 
 1;
 

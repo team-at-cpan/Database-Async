@@ -1,20 +1,15 @@
 package Database::Async::ORM::Extension;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
+# AUTHORITY
 
-sub new {
-    my ($class) = shift;
-    bless { @_ }, $class
-}
+field $name:param:reader;
+field $defined_in:param:reader;
+field $description:param:reader;
+field $optional:param:reader;
 
-sub name { shift->{name} }
-sub defined_in { shift->{defined_in} }
-sub description { shift->{description} }
-sub optional { shift->{optional} }
-sub is_optional { shift->{optional} ? 1 : 0 }
+method is_optional { $optional ? 1 : 0 }
 
 1;
 

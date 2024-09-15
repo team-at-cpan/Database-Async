@@ -1,12 +1,8 @@
 package Database::Async::ORM;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::ORM;
+# AUTHORITY
 
 =head1 NAME
 
@@ -48,11 +44,9 @@ Database::Async::ORM - provides object-relational features for L<Database::Async
 =cut
 
 use Future;
-use Future::AsyncAwait;
-use Syntax::Keyword::Try;
 use Path::Tiny;
 use List::Util qw(sum0);
-use Scalar::Util qw(blessed);
+use List::Keywords qw(first);
 
 use Database::Async::ORM::Schema;
 use Database::Async::ORM::Type;
@@ -61,57 +55,29 @@ use Database::Async::ORM::Field;
 use Database::Async::ORM::Constraint;
 use Database::Async::ORM::Extension;
 
-use Log::Any qw($log);
+field $extension:param:reader = [];
+field $schema:param:reader = [];
+field $schema_definitions:param:reader = +{};
 
-sub new {
-    my $class = shift;
-    bless {
-        schema => [],
-        extension => [],
-        @_
-    }, $class
+method schemata { $schema->@* }
+method schema_list { $schema->@* }
+method extension_list { $extension->@* }
+
+method schema_by_name ($name) {
+    return (
+        first { $_->name eq $name } $self->schema_list
+            or die 'cannot find schema ' . $name . ', have these instead: ' . join(',', map $_->name, $self->schema_list)
+    );
 }
-
-sub add_schema {
-    my ($self, $schema) = @_;
-    push $self->{schema}->@*, $schema;
-}
-
-sub add_extension {
-    my ($self, $extension) = @_;
-    push $self->{extension}->@*, $extension;
-}
-
-sub schemata {
-    shift->{schema}->@*
-}
-
-sub schema_list {
-    shift->{schema}->@*
-}
-
-sub extension_list {
-    shift->{extension}->@*
-}
-
-sub schema_by_name {
-    my ($self, $name) = @_;
-    my ($schema) = grep { $_->name eq $name } $self->schemata or die 'cannot find schema ' . $name . ', have these instead: ' . join(',', map $_->name, $self->schemata);
-    return $schema;
-}
-
-sub schema_definitions { shift->{schema_definitions} //= {} }
 
 # Currently hardcoded to PostgreSQL, eventually we should be able to query
 # the engine for this information.
-sub ddl_for {
+method ddl_for {
     require Database::Async::Engine::PostgreSQL::DDL;
     return Database::Async::Engine::PostgreSQL::DDL->new;
 }
 
-async sub apply_database_changes {
-    my ($self, $db, @actions) = @_;
-
+async method apply_database_changes ($db, @actions) {
     my $ddl = $self->ddl_for($db);
 
     # Optional extensions first, and we don't care if any fail
@@ -193,9 +159,7 @@ async sub apply_database_changes {
     return;
 }
 
-sub database_changes_as_sql {
-    my ($self, $db, @actions) = @_;
-
+method database_changes_as_sql ($db, @actions) {
     my $ddl = $self->ddl_for($db);
 
     my @out;
@@ -263,12 +227,11 @@ Returns the current L<Database::Async::ORM> instance.
 
 =cut
 
-sub load_from {
-    my ($self, $source, $loader) = @_;
+method load_from ($source, $loader) {
     die 'needs a source to load from' unless defined $source;
 
     my $cfg = ref($source) ? $source : $self->read_from($source, $loader);
-    $self->{schema_definitions} = $cfg;
+    $schema_definitions = $cfg;
     $log->tracef('Loaded config %s', $cfg);
 
     my @pending;
@@ -458,8 +421,7 @@ Populates a L<Database::Async::ORM::Table> instance.
 
 =cut
 
-sub populate_table {
-    my ($self, %args) = @_;
+method populate_table (%args) {
     my $table_name = $args{name};
     my $table_details = $args{details};
     my $schema = $args{schema};
@@ -513,8 +475,7 @@ Reads data from a file or recursively from a base path.
 
 =cut
 
-sub read_from {
-    my ($self, $source, $loader) = @_;
+method read_from ($source, $loader) {
     die 'needs a source to load from' unless defined $source;
 
     my $base = path($source);
@@ -553,8 +514,7 @@ sub read_from {
     return $self->schema_definitions;
 }
 
-sub load_from_file {
-    my ($self, $base, $file, $loader) = @_;
+method load_from_file ($base, $file, $loader) {
     my $cfg = $self->schema_definitions;
 
     # Strip off the base prefix so that we have something that matches our

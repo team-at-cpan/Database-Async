@@ -1,13 +1,8 @@
 package Database::Async::Pool;
-
-use strict;
-use warnings;
-
-use Object::Pad;
-class Database::Async::Pool;
-inherit IO::AsyncX::Notifier;
+use Full::Class qw(:v1), extends => 'IO::AsyncX::Notifier';
 
 # VERSION
+# AUTHORITY
 
 =head1 NAME
 
@@ -27,15 +22,16 @@ use Scalar::Util qw(blessed refaddr);
 use List::UtilsBy qw(extract_by);
 use Log::Any qw($log);
 
+field $min:param:reader = 0;
+field $max:param:reader = 1;
+
 field $backoff:reader;
 field $pending_count:reader = 0;
 field $count:reader         = 0;
-field $min:reader           = 0;
-field $max:reader           = 1;
 field $attempts      = undef;
 field $ordering      = 'serial';
-field $waiting       { [] }
-field $ready         { [] }
+field $waiting       = [];
+field $ready         = [];
 field $new_future;
 field $request_engine;
 field $uri;

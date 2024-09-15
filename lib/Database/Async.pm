@@ -10,6 +10,8 @@ Database::Async - provides a database abstraction layer for L<IO::Async>
 
 =head1 SYNOPSIS
 
+ use Database::Async;
+ use Future::AsyncAwait;
  # Just looking up one thing?
  my ($id) = await $db->query(
   q{select id from some_table where name = ?},
@@ -168,6 +170,11 @@ use Database::Async::Query;
 use Database::Async::StatementHandle;
 use Database::Async::Transaction;
 
+field $encoding : reader;
+field $ryu;
+field $type;
+field $uri;
+field $pool;
 
 =head1 METHODS
 
@@ -180,8 +187,7 @@ instance once ready.
 
 =cut
 
-async sub transaction {
-    my ($self, @args) = @_;
+async method transaction (@args) {
     Scalar::Util::weaken(
         $self->{transactions}[@{$self->{transactions}}] =
             my $txn = Database::Async::Transaction->new(
@@ -216,8 +222,7 @@ Returns a L<Future> which resolves once the transaction is committed.
 
 =cut
 
-async sub txn {
-    my ($self, $code, @args) = @_;
+async method txn ($code, @args) {
     my $txn = await $self->transaction;
     try {
         my @data = await Future->call(
@@ -249,7 +254,7 @@ Returns the configured L<URI> for populating database instances.
 
 =cut
 
-sub uri { shift->{uri} }
+method uri { $self->{uri} }
 
 =head2 pool
 
@@ -257,11 +262,15 @@ Returns the L<Database::Async::Pool> instance.
 
 =cut
 
-sub pool {
-    my ($self) = @_;
-    $self->{pool} ||= Database::Async::Pool->new(
-        $self->pool_args
-    );
+method pool {
+    unless($self->{pool}) {
+        $self->add_child(
+            $self->{pool} = Database::Async::Pool->new(
+                $self->pool_args
+            )
+        );
+    }
+    return $self->{pool};
 }
 
 =head2 pool_args
@@ -270,8 +279,7 @@ Returns a list of standard pool constructor arguments.
 
 =cut
 
-sub pool_args {
-    my ($self) = @_;
+method pool_args {
     return (
         request_engine => $self->curry::weak::request_engine,
         uri            => $self->uri,
@@ -305,11 +313,11 @@ my %encoding_map = (
     'unicode' => 'UTF-8',
 );
 
-sub configure {
-    my ($self, %args) = @_;
-
+method configure (
+    %args
+) {
     if(my $encoding = delete $args{encoding}) {
-        $self->{encoding} = $encoding_map{$encoding} // $encoding;
+        $args{encoding} = $encoding_map{$encoding} // $encoding;
     }
 
     if(my $uri = delete $args{uri}) {
@@ -318,19 +326,17 @@ sub configure {
         # to a standard URI. Some of the database
         # engines provide such a standard (e.g. PostgreSQL).
         # Others may not...
-        $self->{uri} = URI->new("$uri");
+        $args{uri} = URI->new("$uri");
     }
     if(exists $args{engine}) {
-        $self->{engine_parameters} = delete $args{engine};
-    }
-    if(exists $args{type}) {
-        $self->{type} = delete $args{type};
+        $args{engine_parameters} = delete $args{engine};
     }
     if(my $pool = delete $args{pool}) {
         if(blessed $pool) {
-            $self->{pool} = $pool;
+            $args{pool} = $pool;
         } else {
-            $self->{pool} = Database::Async::Pool->new(
+            warn "Pool args = @{[ $pool->%* ]}";
+            $args{pool} = Database::Async::Pool->new(
                 $self->pool_args,
                 %$pool,
             );
@@ -339,17 +345,14 @@ sub configure {
     $self->next::method(%args);
 }
 
-sub encoding { shift->{encoding} }
-
 =head2 ryu
 
 A L<Ryu::Async> instance, used for requesting sources, sinks and timers.
 
 =cut
 
-sub ryu {
-    my ($self) = @_;
-    $self->{ryu} //= do {
+method ryu {
+    $ryu //= do {
         $self->add_child(
             my $ryu = Ryu::Async->new
         );
@@ -363,7 +366,7 @@ Instantiates a new L<Ryu::Source>.
 
 =cut
 
-sub new_source { shift->ryu->source }
+method new_source { $self->ryu->source }
 
 =head2 new_sink
 
@@ -371,7 +374,7 @@ Instantiates a new L<Ryu::Sink>.
 
 =cut
 
-sub new_sink { shift->ryu->sink }
+method new_sink { $self->ryu->sink }
 
 =head2 new_future
 
@@ -379,7 +382,7 @@ Instantiates a new L<Future>.
 
 =cut
 
-sub new_future { shift->loop->new_future }
+method new_future { $self->loop->new_future }
 
 =head1 METHODS - Internal, engine-related
 
@@ -393,8 +396,7 @@ L<Database::Async::Engine> instance when ready to use.
 
 =cut
 
-async sub request_engine {
-    my ($self) = @_;
+async method request_engine {
     $log->tracef('Requesting new engine');
     my $engine = $self->engine_instance;
     $log->tracef('Connecting');
@@ -407,10 +409,7 @@ Loads the appropriate engine class and attaches to the loop.
 
 =cut
 
-sub engine_instance {
-    my ($self) = @_;
-    my $uri = $self->uri;
-    my $type = $self->{type} // $uri->scheme;
+method engine_instance {
     die 'unknown database type ' . $type
         unless my $engine_class = $Database::Async::Engine::ENGINE_MAP{$type};
     Module::Load::load($engine_class) unless $engine_class->can('new');
@@ -422,7 +421,7 @@ sub engine_instance {
     );
 
     # Only recent engine versions support this parameter
-    if(my $encoding = $self->encoding) {
+    if($encoding) {
         if($engine_class->can('encoding')) {
             $param{encoding} = $self->encoding;
         } else {
@@ -434,6 +433,7 @@ sub engine_instance {
     $self->add_child(
         my $engine = $engine_class->new(%param)
     );
+    warn "invalid engine? $engine\n" unless ref($engine);
     $engine;
 }
 
@@ -444,17 +444,15 @@ ready for queries.
 
 =cut
 
-sub engine_ready {
-    my ($self, $engine) = @_;
+method engine_ready ($engine) {
     $self->pool->queue_ready_engine($engine);
 }
 
-sub engine_disconnected {
-    my ($self, $engine) = @_;
+method engine_disconnected ($engine) {
     $self->pool->unregister_engine($engine);
 }
 
-sub db { shift }
+method db { $self }
 
 =head2 queue_query
 
@@ -462,8 +460,7 @@ Assign the given query to the next available engine instance.
 
 =cut
 
-async sub queue_query {
-    my ($self, $query) = @_;
+async method queue_query ($query) {
     $log->tracef('Queuing query %s', $query);
     my $f = $self->pool->next_engine;
     CANCEL { $f->cancel; return undef }
@@ -474,36 +471,25 @@ async sub queue_query {
     return await $q;
 }
 
-sub diagnostics {
-    my ($self) = @_;
-}
+method diagnostics { }
 
-sub notification {
-    my ($self, $engine, $channel, $data) = @_;
+method notification ($engine, $channel, $data) {
     $log->tracef('Database notifies us via %s of %s', $channel, $data);
     $self->notification_source($channel)->emit($data);
 }
 
-sub notification_source {
-    my ($self, $name) = @_;
+method notification_source ($name) {
     $self->{notification_source}{$name} //= $self->new_source;
 }
 
-sub _add_to_loop {
-    my ($self, $loop) = @_;
-    $self->add_child(
-        $self->pool
-    );
-    return;
-}
-
-sub _remove_from_loop {
-    my ($self, $loop) = @_;
-    if($self->{ryu}) {
-        $self->remove_child(delete $self->{ryu});
+method _remove_from_loop ($loop) {
+    if($ryu) {
+        $self->remove_child($ryu);
+        undef $ryu;
     }
-    if($self->{pool}) {
-        $self->remove_child(delete $self->{pool});
+    if($pool) {
+        $self->remove_child($pool);
+        undef $pool;
     }
     return $self->next::method($loop);
 }
@@ -532,6 +518,7 @@ prospect indeed
 
 and at higher levels, L<DBIx::Class> or one of the many other ORMs might be
 worth a look. Nearly all of those will use L<DBI> in some form or other.
+
 Several years ago I put together a list, the options have doubtless multiplied
 since then:
 

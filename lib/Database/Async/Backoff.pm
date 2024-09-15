@@ -1,12 +1,7 @@
 package Database::Async::Backoff;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Backoff;
 
 =head1 NAME
 
@@ -15,8 +10,6 @@ Database::Async::Backoff - support for backoff algorithms in L<Database::Async>
 =head1 DESCRIPTION
 
 =cut
-
-use Future::AsyncAwait;
 
 my %class_for_type;
 

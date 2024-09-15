@@ -1,12 +1,8 @@
 package Database::Async::Row;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Row;
+# AUTHORITY
 
 =head1 NAME
 
@@ -17,25 +13,18 @@ Database::Async::Row - represents a single row response
 
 =cut
 
+field $data:param:reader = [];
+field $index_by_name:param:reader = {};
+
 =head1 METHODS
 
 =cut
-
-=head2 new
-
-=cut
-
-sub new {
-    my $self = shift;
-    bless { @_ }, $self
-}
 
 =head2 field
 
 =cut
 
-sub field {
-    my ($self, $name) = @_;
+method field ($name) {
     $self->{data}[$self->{index_by_name}{$name} // die 'unknown field ' . $name]->{data}
 }
 

@@ -1,13 +1,8 @@
 package Database::Async::Transaction;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1), extends => 'Database::Async::DB';
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Transaction;
-inherit Database::Async::DB;
+# AUTHORITY
 
 =head1 NAME
 
@@ -20,8 +15,6 @@ Database::Async::Transaction - represents a single database transaction in L<Dat
 use Future;
 use Class::Method::Modifiers qw(:all);
 
-use Log::Any qw($log);
-
 =head1 METHODS
 
 =cut
@@ -33,11 +26,9 @@ that's normally handled by L<Database::Async> itself.
 
 =cut
 
-sub new {
-    my ($class, %args) = @_;
-    Scalar::Util::weaken($args{database} || die 'expected database parameter');
-    $args{open} //= 0;
-    bless \%args, $class
+ADJUST {
+    $self->{open} //= 0;
+    Scalar::Util::weaken($self->{database} || die 'expected database parameter');
 }
 
 sub database { shift->{database} }

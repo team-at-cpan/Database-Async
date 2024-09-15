@@ -1,14 +1,7 @@
 package Database::Async::StatementHandle;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::StatementHandle;
-
-sub new { my $class = shift; bless { @_ }, $class }
+# AUTHORITY
 
 1;
-

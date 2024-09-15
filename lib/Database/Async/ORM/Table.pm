@@ -1,33 +1,40 @@
 package Database::Async::ORM::Table;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
+# AUTHORITY
 
-sub new {
-    my ($class, %args) = @_;
-    bless \%args, $class
+use List::Keywords qw(first);
+
+field $schema:param:reader;
+field $name:param:reader;
+field $defined_in:param:reader;
+field $description:param:reader;
+field $tablespace:param:reader;
+
+field $parents:param = [];
+field $fields:param = [];
+field $constraints:param = [];
+field $primary_keys:param = [];
+
+method parents { $parents->@* }
+method fields { $fields->@* }
+method constraints { $constraints->@* }
+
+method foreign_keys {
+    grep { $_->type eq 'foreign_key' } $self->constraints
 }
 
-sub schema { shift->{schema} }
-sub name { shift->{name} }
-sub defined_in { shift->{defined_in} }
-sub description { shift->{description} }
-sub tablespace { shift->{tablespace} }
-sub parents { (shift->{parents} //= [])->@* }
-sub fields { (shift->{fields} //= [])->@* }
-sub constraints { (shift->{constraints} //= [])->@* }
-sub foreign_keys { grep { $_->type eq 'foreign_key' } shift->constraints }
-sub primary_keys {
-    my ($self) = @_;
-    map { $self->field_by_name($_) } ($self->{primary_keys} // [])->@*
+method primary_keys {
+    map { $self->field_by_name($_) } $primary_keys->@*
 }
 
-sub field_by_name {
-    my ($self, $name) = @_;
-    my ($field) = grep { $_->name eq $name } $self->fields;
-    return $field;
+method field_by_name ($name) {
+    return first { $_->name eq $name } $self->fields;
+}
+
+method qualified_name {
+    $self->schema->name . '.' . $self->name
 }
 
 1;

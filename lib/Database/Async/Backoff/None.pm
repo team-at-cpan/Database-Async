@@ -1,15 +1,8 @@
-package Database::Async::Backoff::None;
-
-use strict;
-use warnings;
+package Database::Async::Backoff::Exponential;
+use Full::Class qw(:v1), extends => 'Database::Async::Backoff';
 
 # VERSION
-
-use Object::Pad;
-class Database::Async::Backoff::None;
-inherit Database::Async::Backoff;
-
-use mro qw(c3);
+# AUTHORITY
 
 Database::Async::Backoff->register(
     none => __PACKAGE__

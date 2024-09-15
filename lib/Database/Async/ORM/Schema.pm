@@ -1,38 +1,31 @@
 package Database::Async::ORM::Schema;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
+# AUTHORITY
+
+use List::Keywords qw(first);
 
 use Database::Async::ORM::Type;
 
-sub new {
-    my ($class) = shift;
-    bless { @_ }, $class
+field $name:param:reader;
+field $defined_in:param:reader;
+field $description:param:reader;
+field $tables:param = [];
+field $types:param = [];
+
+method table_by_name ($name) {
+    return first { $_->name eq $name } $tables->@*;
 }
 
-sub name { shift->{name} }
-sub defined_in { shift->{defined_in} }
-sub description { shift->{description} }
-sub tables { (shift->{tables} // [])->@* }
-sub types { (shift->{types} // [])->@* }
-
-sub table_by_name {
-    my ($self, $name) = @_;
-    (grep { $_->name eq $name } (shift->{tables} // [])->@*)[0]
+method add_table ($table) {
+    push $tables->@*, $table;
+    return $self;
 }
 
-sub add_table {
-    my ($self, $table) = @_;
-    push @{$self->{tables}}, $table;
-    $self;
-}
-
-sub add_type {
-    my ($self, $type) = @_;
-    push @{$self->{types}}, $type;
-    $self;
+method add_type ($type) {
+    push $types->@*, $type;
+    return $self;
 }
 
 my %predefined_types = map {
@@ -339,12 +332,11 @@ my %predefined_types = map {
     integer
 );
 
-sub type_by_name {
-    my ($self, $name) = @_;
+method type_by_name ($name) {
     return $predefined_types{$name} if $predefined_types{$name};
     my ($type) = grep {
         $_->{name} eq $name
-    } $self->{types}->@* or die 'cannot find type ' . $name;
+    } $types->@* or die 'cannot find type ' . $name;
     return $type;
 }
 

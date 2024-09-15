@@ -1,30 +1,26 @@
 package Database::Async::ORM::Constraint;
-
-use strict;
-use warnings;
+use Full::Class qw(:v1);
 
 # VERSION
+# AUTHORITY
 
-sub new {
-    my ($class, %args) = @_;
-    bless \%args, $class
+field $table:param:reader;
+field $name:param:reader;
+field $type:param:reader;
+field $fields:param = [];
+field $references:param = undef;
+field $deferrable:param = 0;
+field $initially_deferred:param = 0;
+
+method is_deferrable { !!$deferrable }
+method is_deferred { !!$initially_deferred }
+
+method fields {
+    map { $self->table->field_by_name($_) } ($fields //= [])->@*
 }
 
-sub table { shift->{table} }
-sub name { shift->{name} }
-sub type { shift->{type} }
-
-sub is_deferrable { shift->{deferrable} }
-sub is_deferred { shift->{initially_deferred} }
-
-sub fields {
-    my ($self) = @_;
-    map { $self->table->field_by_name($_) } ($self->{fields} //= [])->@*
-}
-
-sub references {
-    my ($self) = @_;
-    $self->table->schema->table_by_name($self->{references}{table});
+method references {
+    $self->table->schema->table_by_name($references->{table});
 }
 
 1;
