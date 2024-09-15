@@ -11,15 +11,6 @@ Database::Async - provides a database abstraction layer for L<IO::Async>
 =head1 SYNOPSIS
 
  # Just looking up one thing?
- my ($id) = $db->query(
-  q{select id from some_table where name = ?},
-  bind => ['some name']
- )->single
-  # This is an example, so we want the result immediately - in
-  # real async code, you'd rarely call Future->get, but would
-  # typically use `->then` or `->on_done` instead
-  ->get;
- # or, with Future::AsyncAwait, try:
  my ($id) = await $db->query(
   q{select id from some_table where name = ?},
   bind => ['some name']
@@ -35,22 +26,27 @@ Database::Async - provides a database abstraction layer for L<IO::Async>
     # ->get or ->retain here!
     ->retain;
 
- # Transactions
- $db->transaction(sub {
+ # Transactions: this returns a Future, so if you want to wait for it to complete,
+ # call `->get` (throws an exception if something goes wrong)
+ # or `->await` (just waits for it to succeed or fail, but ignores
+ # the result).
+ await $db->transaction(async sub {
   my ($tx) = @_;
- })->commit
-  # This returns a Future, so if you want to wait for it to complete,
-  # call `->get` (throws an exception if something goes wrong)
-  # or `->await` (just waits for it to succeed or fail, but ignores
-  # the result).
- ->get;
+ })->commit;
+
+ # Alternatively, call ->txn and use the resulting object like a database handle
+ my $txn = $db->txn;
+ await $txn->query(q{update something set key = 'value'});
+ if(rand > 0.5) {
+  await $txn->commit;
+ } else {
+  await $txn->rollback;
+ }
 
 =head1 DESCRIPTION
 
 Database support for L<IO::Async>. This is the base API, see L<Database::Async::Engine>
 and subclasses for specific database functionality.
-
-B<This is an early preview release>.
 
 L<DBI> provides a basic API for interacting with a database, but this is
 very low level and uses a synchronous design. See L<DBIx::Async> if you're
@@ -59,7 +55,9 @@ familiar with L<DBI> and want an interface that follows it more closely.
 Typically a database only allows a single query to run at a time.
 Other queries will be queued.
 
-Set up a pool of connections to provide better parallelism:
+=head2 Connection pool
+
+Use the C<pool> parameter to set up a pool of connections to provide better parallelism:
 
     my $dbh = Database::Async->new(
         uri  => 'postgresql://write@maindb/dbname?sslmode=require',
@@ -69,14 +67,14 @@ Set up a pool of connections to provide better parallelism:
     );
 
 Queries and transactions will then automatically be distributed
-among these connections. However, note that:
+among these connections. Note that:
 
 =over 4
 
 =item * all queries within a transaction will be made on the same connection
 
-=item * ordering guarantees are weaker: queries will be started in
-order on the next available connection
+=item * outside a transaction, queries will be started in order on the next
+available connection
 
 =back
 
@@ -89,7 +87,7 @@ With a single connection, you could expect:
 
 to insert the rows first, then return them in the C<select> call. B<With a pool of connections, that's not guaranteed>.
 
-=head2 Pool configuration
+=head3 Pool configuration
 
 The following parameters are currently accepted for defining the pool:
 
@@ -128,14 +126,12 @@ In L<DBI>:
 
 In L<Database::Async>:
 
- print $_->{id} . "\n" for
-  $db->query(
-   q{select * from something where id = ?},
-   bind => [
-    $id
-   ])->row_hashrefs
-     ->as_arrayref
-     ->@*
+ print $_->{id} . "\n" for (
+  await $db->query(
+   q{select * from something where id = ?}, $id
+  )->row_hashrefs
+   ->as_arrayref
+ )->@*;
 
 In L<DBI>:
 
@@ -151,17 +147,14 @@ In L<DBI>:
 In L<Database::Async>:
 
  my $sth = $db->prepare(q{select * from something where id = ?});
- (Future::Utils::fmap_void  {
-  my ($id) = @_;
-  $sth->bind(0, $id, 'bigint')
-   ->then(sub { $sth->execute })
-   ->then(sub {
-    $sth->row_hashrefs
+ await Future::Utils::fmap_void(async sub ($id) {
+  await $sth->bind(0, $id, 'bigint');
+  await $sth->execute;
+  await $sth->row_hashrefs
      ->each(sub {
       print $_->{name} . "\n";
-     })->completed
-   })
- } foreach => [1, 2, 3 ])->get;
+     })->completed;
+ } foreach => [1, 2, 3 ], concurrent => 3);
 
 =cut
 
