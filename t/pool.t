@@ -1,10 +1,7 @@
-use strict;
-use warnings;
-
+use Full::Script qw(:v1);
 use Test::More;
 use Test::Fatal;
 
-use Future::AsyncAwait;
 use Database::Async;
 use Database::Async::Engine::Empty;
 
@@ -46,7 +43,7 @@ subtest 'Database::Async::Pool instantiation via Database::Async' => sub {
         ok($f->is_ready, 'the engine is available immediately');
         is($f->get, $engine, 'requested engine matches ready one');
         my $requested = 0;
-        local $pool->request_engine_handler = async sub {
+        dynamically $pool->request_engine_handler = async sub {
             ++$requested;
         };
         isa_ok(my $next = $pool->next_engine, 'Future');
