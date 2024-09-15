@@ -1,13 +1,8 @@
 package Database::Async;
 # ABSTRACT: database interface for use with IO::Async
-use strict;
-use warnings;
+use Full::Class qw(:v1), extends => 'Database::Async::DB';
 
 our $VERSION = '0.019';
-
-use Object::Pad;
-class Database::Async;
-inherit Database::Async::DB;
 
 =head1 NAME
 
@@ -170,16 +165,9 @@ In L<Database::Async>:
 
 =cut
 
-use mro;
-no indirect;
-
-use Future::AsyncAwait qw(:experimental);
-use Syntax::Keyword::Try;
-
 use URI;
 use URI::db;
 use Module::Load ();
-use Scalar::Util qw(blessed);
 
 use Database::Async::Engine;
 use Database::Async::Pool;
@@ -187,7 +175,6 @@ use Database::Async::Query;
 use Database::Async::StatementHandle;
 use Database::Async::Transaction;
 
-use Log::Any qw($log);
 
 =head1 METHODS
 

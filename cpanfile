@@ -1,3 +1,4 @@
+requires 'Full::Class', '>= 1.002';
 requires 'Object::Pad', '>= 0.808';
 requires 'Class::Method::Modifiers', 0;
 requires 'curry', 0;
