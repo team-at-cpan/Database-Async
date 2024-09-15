@@ -1,4 +1,4 @@
-package Database::Async::Backoff::Exponential;
+package Database::Async::Backoff::None;
 use Full::Class qw(:v1), extends => 'Database::Async::Backoff';
 
 # VERSION
