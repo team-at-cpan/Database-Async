@@ -258,12 +258,15 @@ method load_from ($source, $loader) {
         $log->debugf('%s', $schema_name);
         my $schema_details = $cfg->{schema}{$schema_name};
 
-        my $schema = Database::Async::ORM::Schema->new(
-            defined_in => $schema_details->{defined_in},
-            name       => $schema_name
-        );
-        $self->add_schema($schema);
-        push @pending, $schema;
+        my ($schema) = grep { $_->name eq $schema_name } $self->schemata;
+        unless($schema) {
+            $schema = Database::Async::ORM::Schema->new(
+                defined_in => $schema_details->{defined_in},
+                name       => $schema_name
+            );
+            $self->add_schema($schema);
+            push @pending, $schema;
+        }
 
         for my $type_name (sort keys $schema_details->{types}->%*) {
             my $type_details = $schema_details->{types}{$type_name};

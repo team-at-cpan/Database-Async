@@ -2,7 +2,7 @@ package Database::Async;
 # ABSTRACT: database interface for use with IO::Async
 use Full::Class qw(:v1), extends => 'IO::AsyncX::Notifier';
 
-our $VERSION = '0.019';
+our $VERSION = '0.020';
 
 =head1 NAME
 
